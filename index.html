@@ -22,7 +22,7 @@ uniform mat4 uPMatrix;
 
 void main(void) {
   gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-  //gl_PointSize = 10.0;
+  gl_PointSize = 3.0;
 }
 </script>
 <script src="js/gl-matrix-min.js"></script>
