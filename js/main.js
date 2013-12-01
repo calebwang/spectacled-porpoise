@@ -1,5 +1,5 @@
 
-var numParticles = 50
+var numParticles = 200
 var particles = new Array();
 
 /* Initializing WebGL, if supported by browser */
@@ -84,6 +84,9 @@ function initShaders() {
   shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
   gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
+  shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+  gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+
   shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
   shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
 }
@@ -104,16 +107,27 @@ function initBuffers() {
   particlePositionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, particlePositionBuffer);
   particlepositions = new Array();
+  colors = new Array();
   var numP = numParticles;
   while(numP--) {
     particlepositions.push(particles[numP].position[0]);
     particlepositions.push(particles[numP].position[1]);
     particlepositions.push(particles[numP].position[2]);
+    colors.push(Math.random());
+    colors.push(Math.random());
+    colors.push(Math.random());
+    colors.push(1.0);
   }
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(particlepositions), gl.DYNAMIC_DRAW);
   particlePositionBuffer.itemSize = 3;
   particlePositionBuffer.numItems = numParticles;
   console.log(particlepositions);
+
+  particleColorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, particleColorBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
+  particleColorBuffer.itemSize = 4;
+  particleColorBuffer.numItems = numParticles;
 }
 
 
@@ -125,6 +139,11 @@ function drawScene() {
   mat4.translate(mvMatrix, mvMatrix,[0.0, 0.0, -2.0]);
   gl.bindBuffer(gl.ARRAY_BUFFER, particlePositionBuffer);
   gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, particlePositionBuffer.itemSize, gl.FLOAT, false, 0.0, 0.0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, particleColorBuffer);
+  gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, particleColorBuffer.itemSize, gl.FLOAT, false, 0.0, 0.0);
+
+  setMatrixUniforms();
   setMatrixUniforms();
   gl.drawArrays(gl.POINTS, 0, particlePositionBuffer.numItems);
 }
@@ -134,6 +153,8 @@ function webGLStart() {
   canvas.id = "main-canvas";
   canvas.style.width = window.innerWidth;
   canvas.style.height = window.innerHeight;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
   document.body.appendChild(canvas);
   initGL(canvas);
   initParticles();
