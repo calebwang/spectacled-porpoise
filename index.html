@@ -5,7 +5,28 @@
     </title>
   </head>
   <body>
-    <script src="three.min.js"></script>
-    <script src="js/particles.js"></script>
   </body>
+  <script id="shader-fs" type="x-shader/x-fragment">
+  precision mediump float;
+
+  void main(void) {
+    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+  }
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+attribute vec3 aVertexPosition;
+
+uniform mat4 uMVMatrix;
+uniform mat4 uPMatrix;
+
+void main(void) {
+  gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+  //gl_PointSize = 10.0;
+}
+</script>
+<script src="js/gl-matrix-min.js"></script>
+<script src="js/lightgl.js"></script>
+<script src="js/particle.js"></script>
+<script src="js/main.js"></script>
 </html>
