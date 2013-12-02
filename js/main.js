@@ -112,8 +112,8 @@ function initShaders() {
 
   physicsProgram = createProgram(physicsvs, physicsfs);
 
-  gl.useProgram(physicsProgram);
 
+  gl.useProgram(renderProgram);
 
   //Initialize shader variables
 
@@ -122,12 +122,15 @@ function initShaders() {
 
   renderProgram.pMatrixUniform = gl.getUniformLocation(renderProgram, "uPMatrix");
   renderProgram.mvMatrixUniform = gl.getUniformLocation(renderProgram, "uMVMatrix");
+  console.log(renderProgram.particleIndexAttribute);
 
   renderProgram.particleDataLocation = gl.getUniformLocation(renderProgram, "uParticleData");
 
-  physicsProgram.vertexPositionAttribute = gl.getAttribLocation(renderProgram, "aVertexPosition");
+  physicsProgram.vertexPositionAttribute = gl.getAttribLocation(physicsProgram, "aVertexPosition");
+  console.log(physicsProgram.vertexPositionAttribute);
   gl.enableVertexAttribArray(physicsProgram.vertexPositionAttribute);
 
+  gl.useProgram(physicsProgram);
   physicsProgram.particleDataLocation = gl.getUniformLocation(physicsProgram, "uParticleData");
   physicsProgram.viewportSizeLocation = gl.getUniformLocation(physicsProgram, "uViewportSize");
   

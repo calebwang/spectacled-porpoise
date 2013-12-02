@@ -13,7 +13,6 @@
 
   attribute vec2 aVertexPosition;
 
-
   void main(void) {
     gl_Position = vec4(aVertexPosition, 1.0, 1.0);
     gl_PointSize = 4.0;
@@ -32,9 +31,9 @@
   }
 
   void main(void) {
-    vec4 pos = vec4(1.0, 1.0, 0.0, 1.0);
+    vec4 pos = texelAtOffset(vec2(0, 0));
     pos.x = pos.x + 0.05; 
-    gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+    gl_FragColor = pos;
   }
 </script>
 
