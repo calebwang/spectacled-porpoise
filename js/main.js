@@ -1,6 +1,6 @@
 
-var numParticles = 256;
 var gridSize = 16;
+var numParticles = gridSize*gridSize;
 var particles = new Array();
 
 /* Initializing WebGL, if supported by browser */
@@ -169,10 +169,6 @@ function initShaders() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-  gl.useProgram(physicsProgram);
-
-  gl.uniform2f(physicsProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
-  gl.uniform1i(physicsProgram.particleDataLocation, 0);
 
   // Create a framebuffer to write data to
   particleFramebuffer = gl.createFramebuffer();
@@ -185,7 +181,6 @@ function initShaders() {
   //create coordinates between 0 and 1 for vertex shader to access texture
   var interval = 1.0/gridSize;
 
-  //this is magic
   particleIndexData = new Float32Array(numParticles * 2);  
   for (var i = 0, u = 0, v = 1; i < numParticles; i++, u = i * 2, v = u + 1){
     particleIndexData[u] = interval * (i % gridSize); // u
@@ -212,6 +207,11 @@ function initShaders() {
   viewportQuadBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, viewportQuadBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, viewportQuadVertices, gl.STATIC_DRAW);
+
+  gl.useProgram(physicsProgram);
+
+  gl.uniform2f(physicsProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
+  gl.uniform1i(physicsProgram.particleDataLocation, 0);
 }
 
 /* set perspective and translation matricies so shader can read */
@@ -222,8 +222,8 @@ function setMatrixUniforms() {
 
 function render() {
   console.log("rendering frame");
-  //requestAnimFrame(render);
-  //updateScene();
+  requestAnimFrame(render);
+  updateScene();
   drawScene();
 
 function updateScene() {
@@ -234,6 +234,9 @@ function updateScene() {
 
   gl.bindBuffer(gl.ARRAY_BUFFER, viewportQuadBuffer);
   gl.vertexAttribPointer(physicsProgram.vertexPositionAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, particleIndexBuffer);
+  gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
+  gl.vertexAttribPointer(renderProgram.particleIndexAttribute, particleIndexBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, particleFramebuffer);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
