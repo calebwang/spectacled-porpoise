@@ -21,13 +21,19 @@ function initGL(canvas) {
   }
 }
 
+
+var seed = 5;
+function random() {
+        var x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+}
 /* initializes randomly distributedparticles */
 function initParticles() {
   var numP = numParticles;
   while(numP--) {
-    var pX = Math.random() * 2 - 1,
-        pY = Math.random() * 2 - 1,
-        pZ = Math.random() * 2 - 1,
+    var pX = random() * 2 - 1,
+        pY = random() * 2 - 1,
+        pZ = random(),
         tempP = new Particle(pX, pY, pZ);
         particles.push(tempP);
   }
@@ -113,27 +119,23 @@ function initShaders() {
   physicsProgram = createProgram(physicsvs, physicsfs);
 
 
-  gl.useProgram(renderProgram);
 
   //Initialize shader variables
 
   renderProgram.particleIndexAttribute = gl.getAttribLocation(renderProgram, "aParticleIndex");
-  gl.enableVertexAttribArray(renderProgram.vertexPositionAttribute);
+  gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
 
   renderProgram.pMatrixUniform = gl.getUniformLocation(renderProgram, "uPMatrix");
   renderProgram.mvMatrixUniform = gl.getUniformLocation(renderProgram, "uMVMatrix");
-  console.log(renderProgram.particleIndexAttribute);
 
   renderProgram.particleDataLocation = gl.getUniformLocation(renderProgram, "uParticleData");
 
-  physicsProgram.vertexPositionAttribute = gl.getAttribLocation(physicsProgram, "aVertexPosition");
-  console.log(physicsProgram.vertexPositionAttribute);
-  gl.enableVertexAttribArray(physicsProgram.vertexPositionAttribute);
 
-  gl.useProgram(physicsProgram);
   physicsProgram.particleDataLocation = gl.getUniformLocation(physicsProgram, "uParticleData");
   physicsProgram.viewportSizeLocation = gl.getUniformLocation(physicsProgram, "uViewportSize");
   
+  physicsProgram.vertexPositionAttribute = gl.getAttribLocation(physicsProgram, "aVertexPosition");
+  gl.enableVertexAttribArray(physicsProgram.vertexPositionAttribute);
 
   // Create particles
   particlePositionBuffer = gl.createBuffer();
@@ -167,6 +169,8 @@ function initShaders() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
+  gl.useProgram(physicsProgram);
+
   gl.uniform2f(physicsProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
   gl.uniform1i(physicsProgram.particleDataLocation, 0);
 
@@ -179,18 +183,22 @@ function initShaders() {
   gl.useProgram(renderProgram);
   gl.uniform1i(renderProgram.particleDataLocation, particlePositionTexture.unit);
   //create coordinates between 0 and 1 for vertex shader to access texture
-  var interval = 1.0/numParticles;
+  var interval = 1.0/gridSize;
 
   //this is magic
   particleIndexData = new Float32Array(numParticles * 2);  
   for (var i = 0, u = 0, v = 1; i < numParticles; i++, u = i * 2, v = u + 1){
-    particleIndexData[u] = interval * ~~( i % gridSize); // u
-    particleIndexData[v] = interval * ~~( i / gridSize); // v
+    particleIndexData[u] = interval * (i % gridSize); // u
+    particleIndexData[v] = interval * (i / gridSize); // v
   }
+
+  console.log(particleIndexData);
   particleIndexBuffer = gl.createBuffer();
   particleIndexBuffer.itemSize = 2;
+  particleIndexBuffer.numItems = numParticles;
   gl.bindBuffer(gl.ARRAY_BUFFER, particleIndexBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, particleIndexData, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
 
   //if you draw a triangle strip on this, 
   //this covers the whole space
@@ -214,14 +222,13 @@ function setMatrixUniforms() {
 
 function render() {
   console.log("rendering frame");
-  requestAnimFrame(render);
-  updateScene();
+  //requestAnimFrame(render);
+  //updateScene();
   drawScene();
-}
 
 function updateScene() {
+  console.log('updating scene');
   gl.useProgram(physicsProgram);
-  gl.enableVertexAttribArray(0);
 
   gl.viewport(0, 0, gridSize, gridSize);
 
@@ -233,6 +240,7 @@ function updateScene() {
 }
 
 function drawScene() {
+  console.log('rendering scene');
   gl.useProgram(renderProgram);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -243,10 +251,15 @@ function drawScene() {
   mat4.translate(mvMatrix, mvMatrix,[0.0, 0.0, -2.0]);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, particleIndexBuffer);
-  gl.vertexAttribPointer(renderProgram.particleIndexAttribute, particleIndexBuffer.itemSize, gl.FLOAT, false, 0.0, 0.0);
+  gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
+  gl.vertexAttribPointer(renderProgram.particleIndexAttribute, particleIndexBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
   setMatrixUniforms();
-  gl.drawArrays(gl.POINTS, 0, particlePositionBuffer.numItems);
+  gl.enable(gl.BLEND)
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+  gl.drawArrays(gl.POINTS, 0, numParticles);
+  gl.disable(gl.BLEND);
+}
 }
 
 function webGLStart() {
