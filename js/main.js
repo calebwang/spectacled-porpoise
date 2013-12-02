@@ -107,23 +107,41 @@ var pMatrix = mat4.create();
 
 var particlePositionBuffer;
 
+function disableAttributes(program) {
+  for (var i = 0; i < program.attributes.length; i++) {
+    gl.disableVertexAttribArray(program.attributes[i]);
+  }
+}
+
+function enableAttributes(program) {
+  for (var i = 0; i < program.attributes.length; i++) {
+    gl.enableVertexAttribArray(program.attributes[i]);
+  }
+}
 function initShaders() {
   //Create shaders
   var vertexShader = getShader(gl, "render-vs");
   var fragmentShader = getShader(gl, "render-fs");
   renderProgram = createProgram(vertexShader, fragmentShader);
 
+  renderProgram.attributes = []
+
   var physicsvs = getShader(gl, "physics-vs");
   var physicsfs = getShader(gl, "physics-fs");
 
   physicsProgram = createProgram(physicsvs, physicsfs);
 
+  physicsProgram.attributes = []
 
 
   //Initialize shader variables
 
+
   renderProgram.particleIndexAttribute = gl.getAttribLocation(renderProgram, "aParticleIndex");
+  renderProgram.attributes.push(renderProgram.particleIndexAttribute);
   gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
+
+  renderProgram.gridSizeLocation = gl.getUniformLocation(renderProgram, "uGridSize");
 
   renderProgram.pMatrixUniform = gl.getUniformLocation(renderProgram, "uPMatrix");
   renderProgram.mvMatrixUniform = gl.getUniformLocation(renderProgram, "uMVMatrix");
@@ -133,9 +151,12 @@ function initShaders() {
 
   physicsProgram.particleDataLocation = gl.getUniformLocation(physicsProgram, "uParticleData");
   physicsProgram.viewportSizeLocation = gl.getUniformLocation(physicsProgram, "uViewportSize");
+  physicsProgram.gridSizeLocation = gl.getUniformLocation(physicsProgram, "uGridSize");
+
+  physicsProgram.particleIndexAttribute = gl.getAttribLocation(renderProgram, "aParticleIndex");
+  gl.enableVertexAttribArray(physicsProgram.particleIndexAttribute);
+  physicsProgram.attributes.push(physicsProgram.particleIndexAttribute);
   
-  physicsProgram.vertexPositionAttribute = gl.getAttribLocation(physicsProgram, "aVertexPosition");
-  gl.enableVertexAttribArray(physicsProgram.vertexPositionAttribute);
 
   // Create particles
   particlePositionBuffer = gl.createBuffer();
@@ -172,6 +193,8 @@ function initShaders() {
 
   // Create a framebuffer to write data to
   particleFramebuffer = gl.createFramebuffer();
+  particleFramebuffer.width = gridSize;
+  particleFramebuffer.height = gridSize;
   gl.bindFramebuffer(gl.FRAMEBUFFER, particleFramebuffer);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, particlePositionTexture, 0);
 
@@ -181,19 +204,33 @@ function initShaders() {
   //create coordinates between 0 and 1 for vertex shader to access texture
   var interval = 1.0/gridSize;
 
-  particleIndexData = new Float32Array(numParticles * 2);  
+  particleUVIndexData = new Float32Array(numParticles * 2);  
+  particleIndexData = new Float32Array(numParticles);
   for (var i = 0, u = 0, v = 1; i < numParticles; i++, u = i * 2, v = u + 1){
-    particleIndexData[u] = interval * (i % gridSize); // u
-    particleIndexData[v] = interval * (i / gridSize); // v
+    particleUVIndexData[u] = interval * (i % gridSize); // u
+    particleUVIndexData[v] = interval * (i / gridSize); // v
+    particleIndexData[i] = i;
   }
 
-  console.log(particleIndexData);
+  console.log(particleUVIndexData);
+
+  particleUVIndexBuffer = gl.createBuffer();
+  particleUVIndexBuffer.itemSize = 2;
+  particleUVIndexBuffer.numItems = numParticles;
+  gl.bindBuffer(gl.ARRAY_BUFFER, particleUVIndexBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, particleUVIndexData, gl.STATIC_DRAW);
+
+
   particleIndexBuffer = gl.createBuffer();
-  particleIndexBuffer.itemSize = 2;
+  particleIndexBuffer.itemSize = 1;
   particleIndexBuffer.numItems = numParticles;
   gl.bindBuffer(gl.ARRAY_BUFFER, particleIndexBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, particleIndexData, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
+
+  gl.useProgram(renderProgram);
+
+  gl.uniform1f(renderProgram.gridSizeLocation, gridSize);
 
   gl.useProgram(physicsProgram);
 
@@ -213,6 +250,7 @@ function initShaders() {
 
   gl.uniform2f(physicsProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
   gl.uniform1i(physicsProgram.particleDataLocation, 0);
+  gl.uniform1f(physicsProgram.gridSizeLocation, gridSize);
 }
 
 /* set perspective and translation matricies so shader can read */
@@ -234,32 +272,39 @@ function updateScene() {
   gl.viewport(0, 0, gridSize, gridSize);
   gl.useProgram(physicsProgram);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, viewportQuadBuffer);
-  gl.vertexAttribPointer(physicsProgram.vertexPositionAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+  //gl.bindBuffer(gl.ARRAY_BUFFER, viewportQuadBuffer);
+  //gl.vertexAttribPointer(physicsProgram.vertexPositionAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, particleIndexBuffer);
+  gl.vertexAttribPointer(physicsProgram.particleIndexAttribute, 1, gl.FLOAT, gl.FALSE, 0, 0);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, particleFramebuffer);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  //gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.drawArrays(gl.POINTS, 0, numParticles);
 }
 
 function drawScene() {
   console.log('rendering scene');
   gl.useProgram(renderProgram);
+  enableAttributes(renderProgram);
+  disableAttributes(physicsProgram);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
   mat4.perspective(pMatrix, .78539, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
   mat4.identity(mvMatrix);
   mat4.translate(mvMatrix, mvMatrix,[0.0, 0.0, -2.0]);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, particleIndexBuffer);
   gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
-  gl.vertexAttribPointer(renderProgram.particleIndexAttribute, particleIndexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribPointer(renderProgram.particleIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
   setMatrixUniforms();
   gl.enable(gl.BLEND)
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-  gl.drawArrays(gl.POINTS, 0, numParticles);
+  gl.drawArrays(gl.POINTS, 0, particleIndexBuffer.numItems);
   gl.disable(gl.BLEND);
 }
 
