@@ -6,30 +6,67 @@
   </head>
   <body>
   </body>
-  <script id="shader-fs" type="x-shader/x-fragment">
+
+<script id="physics-vs" type="x-shader/x-vertex">
   precision mediump float;
-  varying vec4 vColor;
+  precision mediump int;
+
+  attribute vec2 aVertexPosition;
+
 
   void main(void) {
-    gl_FragColor = vColor;
+    gl_Position = vec4(aVertexPosition, 1.0, 1.0);
+    gl_PointSize = 4.0;
   }
 </script>
 
-<script id="shader-vs" type="x-shader/x-vertex">
-  attribute vec3 aVertexPosition;
-  attribute vec4 aVertexColor;
+<script id="physics-fs" type="x-shader/x-fragment">
+  precision mediump float;
+  precision mediump int;
 
+  uniform sampler2D uParticleData;
+  uniform vec2 uViewportSize;
+
+  vec4 texelAtOffset(vec2 offset) {
+    return texture2D(uParticleData, (gl_FragCoord.xy + offset)/uViewportSize);
+  }
+
+  void main(void) {
+    vec4 pos = vec4(1.0, 1.0, 0.0, 1.0);
+    pos.x = pos.x + 0.05; 
+    gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+  }
+</script>
+
+<script id="render-vs" type="x-shader/x-vertex">
+  precision mediump float;
+  precision mediump int;
+
+  attribute vec2 aParticleIndex;
+
+  uniform sampler2D uParticleData;
   uniform mat4 uMVMatrix;
   uniform mat4 uPMatrix;
 
   varying vec4 vColor;
 
   void main(void) {
-    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-    gl_PointSize = 4.0;
-    vColor = aVertexColor;
+    vec4 particle = texture2D(uParticleData, aParticleIndex);
+    gl_Position = particle;
+    gl_PointSize = 100.0;
   }
 </script>
+
+<script id="render-fs" type="x-shader/x-fragment">
+  precision mediump float;
+  uniform sampler2D uParticleData;
+
+  void main(void) {
+    gl_FragColor = texture2D(uParticleData, gl_PointCoord);
+  }
+</script>
+
+
 <script src="js/gl-matrix-min.js"></script>
 <script src="js/lightgl.js"></script>
 <script src="js/particle.js"></script>
