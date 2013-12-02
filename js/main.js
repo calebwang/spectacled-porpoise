@@ -195,6 +195,8 @@ function initShaders() {
   gl.bufferData(gl.ARRAY_BUFFER, particleIndexData, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
 
+  gl.useProgram(physicsProgram);
+
   //if you draw a triangle strip on this, 
   //this covers the whole space
   var viewportQuadVertices = new Float32Array([
@@ -208,7 +210,6 @@ function initShaders() {
   gl.bindBuffer(gl.ARRAY_BUFFER, viewportQuadBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, viewportQuadVertices, gl.STATIC_DRAW);
 
-  gl.useProgram(physicsProgram);
 
   gl.uniform2f(physicsProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
   gl.uniform1i(physicsProgram.particleDataLocation, 0);
@@ -225,18 +226,16 @@ function render() {
   requestAnimFrame(render);
   updateScene();
   drawScene();
+}
 
 function updateScene() {
   console.log('updating scene');
-  gl.useProgram(physicsProgram);
 
   gl.viewport(0, 0, gridSize, gridSize);
+  gl.useProgram(physicsProgram);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, viewportQuadBuffer);
   gl.vertexAttribPointer(physicsProgram.vertexPositionAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
-  gl.bindBuffer(gl.ARRAY_BUFFER, particleIndexBuffer);
-  gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
-  gl.vertexAttribPointer(renderProgram.particleIndexAttribute, particleIndexBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, particleFramebuffer);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -262,7 +261,6 @@ function drawScene() {
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
   gl.drawArrays(gl.POINTS, 0, numParticles);
   gl.disable(gl.BLEND);
-}
 }
 
 function webGLStart() {
