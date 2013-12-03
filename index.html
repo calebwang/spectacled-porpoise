@@ -57,7 +57,7 @@
   }
 
   vec4 getTexel() {
-    return texture2D(uParticleData, vCoord);
+    return texture2D(uParticleData, gl_FragCoord.xy/uViewportSize);
   }
 
   void main(void) {

@@ -251,7 +251,7 @@ function initShaders() {
 
   gl.useProgram(physicsProgram);
 
-  gl.uniform2f(physicsProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
+  gl.uniform2f(physicsProgram.viewportSizeLocation, gridSize, gridSize);
   gl.uniform1i(physicsProgram.particleDataLocation, 0);
   gl.uniform1f(physicsProgram.gridSizeLocation, gridSize);
 }
@@ -264,7 +264,9 @@ function setMatrixUniforms() {
 
 function render() {
   console.log("rendering frame");
-  requestAnimFrame(render);
+  if (auto) {
+      requestAnimFrame(render);
+  }
   updateScene();
   drawScene();
 }
