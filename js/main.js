@@ -35,7 +35,7 @@ function initParticles() {
   while(numP--) {
     var pX = random() * 2 - 1,
         pY = random() * 2 - 1,
-        pZ = 1.0,
+        pZ = random(),
         tempP = new Particle(pX, pY, pZ);
         particles.push(tempP);
   }
@@ -156,10 +156,10 @@ function initShaders() {
   renderProgram.pMatrixUniform = gl.getUniformLocation(renderProgram, "uPMatrix");
   renderProgram.mvMatrixUniform = gl.getUniformLocation(renderProgram, "uMVMatrix");
 
-  renderProgram.particleDataLocation = gl.getUniformLocation(renderProgram, "uParticleData");
+  renderProgram.particlePositionDataLocation = gl.getUniformLocation(renderProgram, "uParticlePositionData");
 
 
-  physicsProgram.particleDataLocation = gl.getUniformLocation(physicsProgram, "uParticleData");
+  physicsProgram.particlePositionDataLocation = gl.getUniformLocation(physicsProgram, "uParticlePositionData");
   physicsProgram.viewportSizeLocation = gl.getUniformLocation(physicsProgram, "uViewportSize");
   physicsProgram.gridSizeLocation = gl.getUniformLocation(physicsProgram, "uGridSize");
 
@@ -216,7 +216,7 @@ function initShaders() {
 
 
   gl.useProgram(renderProgram);
-  gl.uniform1i(renderProgram.particleDataLocation, particlePositionTexture.unit);
+  gl.uniform1i(renderProgram.particlePositionDataLocation, particlePositionTexture.unit);
   //create coordinates between 0 and 1 for vertex shader to access texture
   var interval = 1.0/gridSize;
 
@@ -252,7 +252,7 @@ function initShaders() {
   gl.useProgram(physicsProgram);
 
   gl.uniform2f(physicsProgram.viewportSizeLocation, gridSize, gridSize);
-  gl.uniform1i(physicsProgram.particleDataLocation, 0);
+  gl.uniform1i(physicsProgram.particlePositionDataLocation, 0);
   gl.uniform1f(physicsProgram.gridSizeLocation, gridSize);
 }
 
@@ -321,13 +321,19 @@ function drawScene() {
 }
 
 function webGLStart() {
-  var canvas = document.createElement("canvas");
+  canvas = document.createElement("canvas");
   canvas.id = "main-canvas";
   canvas.style.width = window.innerWidth;
   canvas.style.height = window.innerHeight;
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   document.body.appendChild(canvas);
+
+  reset();
+}
+
+function reset() {
+
   initGL(canvas);
   initParticles();
   initShaders();
@@ -338,8 +344,6 @@ function webGLStart() {
   if (auto) {
     render();
   }
-
-
 }
 
 webGLStart();

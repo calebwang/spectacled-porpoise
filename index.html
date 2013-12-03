@@ -28,7 +28,6 @@
     return uv;
   }
 
-
   void main(void) {
     vCoord = aVertexIndex;
     vIndex = aParticleIndex;
@@ -41,7 +40,7 @@
   precision mediump float;
   precision mediump int;
 
-  uniform sampler2D uParticleData;
+  uniform sampler2D uParticlePositionData;
   uniform vec2 uViewportSize;
   uniform float uGridSize;
 
@@ -57,12 +56,13 @@
   }
 
   vec4 getTexel() {
-    return texture2D(uParticleData, gl_FragCoord.xy/uViewportSize);
+    return texture2D(uParticlePositionData, gl_FragCoord.xy/uViewportSize);
   }
 
   void main(void) {
-    vec4 pos = getTexel();
-    gl_FragColor = pos * vec4(0.95, 0.95, 0.95, 1.0);
+    vec3 pos = getTexel().xyz;
+    vec3 dir = cross(vec3(0.0, 0.0, 1.0), pos);
+    gl_FragColor = vec4(pos, 1.0) + 0.03*vec4(dir, 1.0);
   }
 </script>
 
@@ -74,7 +74,7 @@
 
   uniform float uGridSize;
 
-  uniform sampler2D uParticleData;
+  uniform sampler2D uParticlePositionData;
   uniform mat4 uMVMatrix;
   uniform mat4 uPMatrix;
 
@@ -92,10 +92,10 @@
   void main(void) {
   #line 10 100
     vec2 uv = getUVFromIndex(aParticleIndex);
-    vec4 particle = texture2D(uParticleData, uv);
+    vec4 particle = texture2D(uParticlePositionData, uv);
     vCoord = aParticleIndex;
     gl_Position = uPMatrix * uMVMatrix * particle;
-    gl_PointSize = 10.0;
+    gl_PointSize = 5.0;
   }
 </script>
 
@@ -104,7 +104,7 @@
   #line 0 10
   precision mediump float;
 
-  uniform sampler2D uParticleData;
+  uniform sampler2D uParticlePositionData;
   uniform float uGridSize;
 
   varying float vCoord;
@@ -118,7 +118,7 @@
   }
 
   void main(void) {
-    gl_FragColor = texture2D(uParticleData, getUVFromIndex(vCoord));
+    gl_FragColor = texture2D(uParticlePositionData, getUVFromIndex(vCoord));
   }
 </script>
 
@@ -131,7 +131,7 @@
 
   uniform float uGridSize;
 
-  uniform sampler2D uParticleData;
+  uniform sampler2D uParticlePositionData;
   uniform mat4 uMVMatrix;
   uniform mat4 uPMatrix;
 
@@ -149,7 +149,7 @@
   void main(void) {
   #line 10 100
     vec2 uv = getUVFromIndex(aParticleIndex);
-    vec4 particle = texture2D(uParticleData, uv);
+    vec4 particle = texture2D(uParticlePositionData, uv);
     vCoord = aParticleIndex;
     gl_Position = uPMatrix * uMVMatrix * vec4(uv.x * 0.5, uv.y * 0.5, 0.0, 1.0);
     gl_PointSize = 10.0;
@@ -161,7 +161,7 @@
   #line 0 10
   precision mediump float;
 
-  uniform sampler2D uParticleData;
+  uniform sampler2D uParticlePositionData;
   uniform float uGridSize;
 
   varying float vCoord;
@@ -175,7 +175,7 @@
   }
 
   void main(void) {
-    gl_FragColor = texture2D(uParticleData, getUVFromIndex(vCoord));
+    gl_FragColor = texture2D(uParticlePositionData, getUVFromIndex(vCoord));
   }
 </script>
 
