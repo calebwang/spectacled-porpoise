@@ -12,9 +12,13 @@
   precision mediump int;
 
   attribute float aParticleIndex;
+  attribute vec2 aVertexIndex;
+
   uniform float uGridSize;
+  uniform vec2 uViewportSize;
 
   varying float vIndex;
+  varying vec2 vCoord;
 
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
@@ -26,8 +30,9 @@
 
 
   void main(void) {
-    gl_Position = vec4(getUVFromIndex(aParticleIndex), 0.0, 1.0);
+    vCoord = aVertexIndex;
     vIndex = aParticleIndex;
+    gl_Position = vec4(aVertexIndex, 0.0, 1.0);
   }
 </script>
 
@@ -41,6 +46,7 @@
   uniform float uGridSize;
 
   varying float vIndex;
+  varying vec2 vCoord;
 
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
@@ -51,7 +57,7 @@
   }
 
   vec4 getTexel() {
-    return texture2D(uParticleData, getUVFromIndex(vIndex));
+    return texture2D(uParticleData, vCoord);
   }
 
   void main(void) {
@@ -67,6 +73,7 @@
   attribute float aParticleIndex;
 
   uniform float uGridSize;
+
   uniform sampler2D uParticleData;
   uniform mat4 uMVMatrix;
   uniform mat4 uPMatrix;
@@ -87,7 +94,7 @@
     vec2 uv = getUVFromIndex(aParticleIndex);
     vec4 particle = texture2D(uParticleData, uv);
     vCoord = aParticleIndex;
-    gl_Position = particle;
+    gl_Position = uPMatrix * uMVMatrix * particle;
     gl_PointSize = 10.0;
   }
 </script>
@@ -114,6 +121,64 @@
     gl_FragColor = texture2D(uParticleData, getUVFromIndex(vCoord));
   }
 </script>
+
+
+<script id="debug-vs" type="x-shader/x-vertex">
+  precision mediump float;
+  precision mediump int;
+
+  attribute float aParticleIndex;
+
+  uniform float uGridSize;
+
+  uniform sampler2D uParticleData;
+  uniform mat4 uMVMatrix;
+  uniform mat4 uPMatrix;
+
+  varying float vCoord;
+
+  vec2 getUVFromIndex(float particleNumber) {
+    float interval = 1.0/uGridSize;
+    vec2 uv;
+    uv.x = interval * mod(particleNumber, uGridSize);
+    uv.y = interval * floor(particleNumber/uGridSize);
+    return uv;
+  }
+
+
+  void main(void) {
+  #line 10 100
+    vec2 uv = getUVFromIndex(aParticleIndex);
+    vec4 particle = texture2D(uParticleData, uv);
+    vCoord = aParticleIndex;
+    gl_Position = uPMatrix * uMVMatrix * vec4(uv.x * 0.5, uv.y * 0.5, 0.0, 1.0);
+    gl_PointSize = 10.0;
+  }
+</script>
+
+<script id="debug-fs" type="x-shader/x-fragment">
+
+  #line 0 10
+  precision mediump float;
+
+  uniform sampler2D uParticleData;
+  uniform float uGridSize;
+
+  varying float vCoord;
+
+  vec2 getUVFromIndex(float particleNumber) {
+    float interval = 1.0/uGridSize;
+    vec2 uv;
+    uv.x = interval * mod(particleNumber, uGridSize);
+    uv.y = interval * floor(particleNumber/uGridSize);
+    return uv;
+  }
+
+  void main(void) {
+    gl_FragColor = texture2D(uParticleData, getUVFromIndex(vCoord));
+  }
+</script>
+
 
 
 <script src="js/gl-matrix-min.js"></script>
