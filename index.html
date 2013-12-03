@@ -55,14 +55,14 @@
     return uv;
   }
 
-  vec4 getTexel() {
+  vec4 getPosition() {
     return texture2D(uParticlePositionData, gl_FragCoord.xy/uViewportSize);
   }
 
   void main(void) {
-    vec3 pos = getTexel().xyz;
+    vec3 pos = getPosition().xyz;
     vec3 dir = cross(vec3(0.0, 0.0, 1.0), pos);
-    gl_FragColor = vec4(pos, 1.0) + 0.03*vec4(dir, 1.0);
+    gl_FragColor = vec4(pos, 1.0) + 0.01*vec4(dir, 1.0);
   }
 </script>
 

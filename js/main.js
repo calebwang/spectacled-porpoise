@@ -1,7 +1,6 @@
-
-var gridSize = 16;
+var gridSize = 256;
 var numParticles = gridSize*gridSize;
-var particles = new Array();
+var particlePositions = new Array();
 var debug = false;
 var auto = true;
 
@@ -26,27 +25,21 @@ function initGL(canvas) {
 
 var seed = 5;
 function random() {
-        var x = Math.sin(seed++) * 10000;
-            return x - Math.floor(x);
+  var x = Math.sin(seed++) * 10000;
+  return x - Math.floor(x);
 }
+
 /* initializes randomly distributedparticles */
 function initParticles() {
   var numP = numParticles;
   while(numP--) {
     var pX = random() * 2 - 1,
         pY = random() * 2 - 1,
-        pZ = random(),
-        tempP = new Particle(pX, pY, pZ);
-        particles.push(tempP);
-  }
+        pZ = random();
 
-  particlePositions = new Array();
-
-  var numP = numParticles;
-  while(numP--) {
-    particlePositions.push(particles[numP].position[0]);
-    particlePositions.push(particles[numP].position[1]);
-    particlePositions.push(particles[numP].position[2]);
+    particlePositions.push(pX);
+    particlePositions.push(pY);
+    particlePositions.push(pZ);
     particlePositions.push(1.0);
   }
 
