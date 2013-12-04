@@ -1,7 +1,7 @@
-var gridSize = 4;
+var gridSize = 1024;
 var numParticles = gridSize*gridSize;
-var debug = true;
-var auto = false;
+var debug = false;
+var auto = true;
 
 /* Initializing WebGL, if supported by browser */
 var gl;
@@ -24,8 +24,12 @@ function initGL(canvas) {
 
 var seed = 5;
 function random() {
-  var x = Math.sin(seed++) * 10000;
-  return x - Math.floor(x);
+  if (debug) {
+    var x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+  } else {
+    return Math.random();
+  }
 }
 
 /* initializes randomly distributedparticles */
@@ -393,9 +397,7 @@ function reset() {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
 
-  if (auto) {
-    render();
-  }
+  render();
 }
 
 webGLStart();
