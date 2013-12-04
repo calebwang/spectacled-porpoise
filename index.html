@@ -7,18 +7,14 @@
   <body>
   </body>
 
-<script id="physics-vs" type="x-shader/x-vertex">
+<script id="velocity-vs" type="x-shader/x-vertex">
   precision mediump float;
   precision mediump int;
 
-  attribute float aParticleIndex;
-  attribute vec2 aVertexIndex;
+  attribute vec2 aVertexCoord;
 
   uniform float uGridSize;
   uniform vec2 uViewportSize;
-
-  varying float vIndex;
-  varying vec2 vCoord;
 
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
@@ -29,23 +25,19 @@
   }
 
   void main(void) {
-    vCoord = aVertexIndex;
-    vIndex = aParticleIndex;
-    gl_Position = vec4(aVertexIndex, 0.0, 1.0);
+    gl_Position = vec4(aVertexCoord, 0.0, 1.0);
   }
 </script>
 
-<script id="physics-fs" type="x-shader/x-fragment">
-  #line 10 100
+<script id="velocity-fs" type="x-shader/x-fragment">
+  #line 0 111
   precision mediump float;
   precision mediump int;
 
   uniform sampler2D uParticlePositionData;
+  uniform sampler2D uParticleVelocityData;
   uniform vec2 uViewportSize;
   uniform float uGridSize;
-
-  varying float vIndex;
-  varying vec2 vCoord;
 
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
@@ -59,9 +51,67 @@
     return texture2D(uParticlePositionData, gl_FragCoord.xy/uViewportSize);
   }
 
+  vec4 getVelocity() {
+    return texture2D(uParticleVelocityData, gl_FragCoord.xy/uViewportSize);
+  }
+
+  void main(void) {
+    vec3 vel = getVelocity().xyz;
+    gl_FragColor = vec4(vel, 1.0) + 0.01*vec4(0.0, -9.8, 0.0, 1.0);
+  }
+</script>
+
+<script id="physics-vs" type="x-shader/x-vertex">
+  precision mediump float;
+  precision mediump int;
+
+  attribute vec2 aVertexCoord;
+
+  uniform float uGridSize;
+  uniform vec2 uViewportSize;
+
+  vec2 getUVFromIndex(float particleNumber) {
+    float interval = 1.0/uGridSize;
+    vec2 uv;
+    uv.x = interval * mod(particleNumber, uGridSize);
+    uv.y = interval * floor(particleNumber/uGridSize);
+    return uv;
+  }
+
+  void main(void) {
+    gl_Position = vec4(aVertexCoord, 0.0, 1.0);
+  }
+</script>
+
+<script id="physics-fs" type="x-shader/x-fragment">
+  #line 0 100
+  precision mediump float;
+  precision mediump int;
+
+  uniform sampler2D uParticlePositionData;
+  uniform sampler2D uParticleVelocityData;
+  uniform vec2 uViewportSize;
+  uniform float uGridSize;
+
+  vec2 getUVFromIndex(float particleNumber) {
+    float interval = 1.0/uGridSize;
+    vec2 uv;
+    uv.x = interval * mod(particleNumber, uGridSize);
+    uv.y = interval * floor(particleNumber/uGridSize);
+    return uv;
+  }
+
+  vec4 getPosition() {
+    return texture2D(uParticlePositionData, gl_FragCoord.xy/uViewportSize);
+  }
+
+  vec4 getVelocity() {
+    return texture2D(uParticleVelocityData, gl_FragCoord.xy/uViewportSize);
+  }
+
   void main(void) {
     vec3 pos = getPosition().xyz;
-    vec3 dir = cross(vec3(0.0, 0.0, 1.0), pos);
+    vec3 dir = getVelocity().xyz;
     gl_FragColor = vec4(pos, 1.0) + 0.01*vec4(dir, 1.0);
   }
 </script>
@@ -95,7 +145,7 @@
     vec4 particle = texture2D(uParticlePositionData, uv);
     vCoord = aParticleIndex;
     gl_Position = uPMatrix * uMVMatrix * particle;
-    gl_PointSize = 5.0;
+    gl_PointSize = 2.0;
   }
 </script>
 
