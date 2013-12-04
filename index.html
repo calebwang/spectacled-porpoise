@@ -19,8 +19,8 @@
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
-    uv.x = interval * mod(particleNumber, uGridSize);
-    uv.y = interval * floor(particleNumber/uGridSize);
+    uv.x = interval * (mod(particleNumber, uGridSize) + 0.5);
+    uv.y = interval * (floor(particleNumber/uGridSize) + 0.5);
     return uv;
   }
 
@@ -42,8 +42,8 @@
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
-    uv.x = interval * mod(particleNumber, uGridSize);
-    uv.y = interval * floor(particleNumber/uGridSize);
+    uv.x = interval * (mod(particleNumber, uGridSize) + 0.5);
+    uv.y = interval * (floor(particleNumber/uGridSize) + 0.5);
     return uv;
   }
 
@@ -73,8 +73,8 @@
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
-    uv.x = interval * mod(particleNumber, uGridSize);
-    uv.y = interval * floor(particleNumber/uGridSize);
+    uv.x = interval * (mod(particleNumber, uGridSize) + 0.5);
+    uv.y = interval * (floor(particleNumber/uGridSize) + 0.5);
     return uv;
   }
 
@@ -96,8 +96,8 @@
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
-    uv.x = interval * mod(particleNumber, uGridSize);
-    uv.y = interval * floor(particleNumber/uGridSize);
+    uv.x = interval * (mod(particleNumber, uGridSize) + 0.5);
+    uv.y = interval * (floor(particleNumber/uGridSize) + 0.5);
     return uv;
   }
 
@@ -133,8 +133,8 @@
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
-    uv.x = interval * mod(particleNumber, uGridSize);
-    uv.y = interval * floor(particleNumber/uGridSize);
+    uv.x = interval * (mod(particleNumber, uGridSize) + 0.5);
+    uv.y = interval * (floor(particleNumber/uGridSize) + 0.5);
     return uv;
   }
 
@@ -162,8 +162,8 @@
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
-    uv.x = interval * mod(particleNumber, uGridSize);
-    uv.y = interval * floor(particleNumber/uGridSize);
+    uv.x = interval * (mod(particleNumber, uGridSize) + 0.5);
+    uv.y = interval * (floor(particleNumber/uGridSize) + 0.5);
     return uv;
   }
 
@@ -190,8 +190,8 @@
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
-    uv.x = interval * mod(particleNumber, uGridSize);
-    uv.y = interval * floor(particleNumber/uGridSize);
+    uv.x = interval * (mod(particleNumber, uGridSize) + 0.5);
+    uv.y = interval * (floor(particleNumber/uGridSize) + 0.5);
     return uv;
   }
 
@@ -201,8 +201,8 @@
     vec2 uv = getUVFromIndex(aParticleIndex);
     vec4 particle = texture2D(uParticlePositionData, uv);
     vCoord = aParticleIndex;
-    gl_Position = uPMatrix * uMVMatrix * vec4(uv.x * 0.5, uv.y * 0.5, 0.0, 1.0);
-    gl_PointSize = 10.0;
+    gl_Position = uPMatrix * uMVMatrix * vec4(uv.x, uv.y, 0.0, 1.0);
+    gl_PointSize = 100.0;
   }
 </script>
 
@@ -219,8 +219,8 @@
   vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
-    uv.x = interval * mod(particleNumber, uGridSize);
-    uv.y = interval * floor(particleNumber/uGridSize);
+    uv.x = interval * (mod(particleNumber, uGridSize) + 0.5);
+    uv.y = interval * (floor(particleNumber/uGridSize) + 0.5);
     return uv;
   }
 

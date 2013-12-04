@@ -1,7 +1,7 @@
-var gridSize = 256;
+var gridSize = 4;
 var numParticles = gridSize*gridSize;
-var debug = false;
-var auto = true;
+var debug = true;
+var auto = false;
 
 /* Initializing WebGL, if supported by browser */
 var gl;
@@ -289,6 +289,7 @@ function initShaders() {
   gl.uniform1i(physicsProgram.particleVelocityDataLocation, 1);
   gl.uniform1f(physicsProgram.gridSizeLocation, gridSize);
 
+  //make sure to change the program or else it breaks
   gl.useProgram(velocityProgram);
   gl.uniform2f(velocityProgram.viewportSizeLocation, gridSize, gridSize);
   gl.uniform1i(velocityProgram.particlePositionDataLocation, 0);
