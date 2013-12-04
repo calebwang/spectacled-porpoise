@@ -1,0 +1,42 @@
+Final Project Proposal
+======================
+
+Team Members
+------------
+- Amy Tsai (-dj)
+- Caleb Wang (-bb)
+- Edwin Xie (-ed)
+- Jason Ye (-di)
+
+Project Description
+-------------------
+We plan to implement a __particle based fluid simulation__ within a predefined container with the following features:
+
+- real time interactions with the fluid
+- fluid interactions with solid objects (splashing)
+- surface reconstruction based on particles
+
+Methods
+-------
+We will be implementing our project as a web application using JavaScript and WebGL. Additionally, we plan to use a Lagrangian, particle based method.
+	
+Work Division
+-------------
+We plan to divide our project into the following portions, and will allocate the parts to our team members according to interest:
+
+- implementation of SPH equations
+- rendering and display using WebGL
+- surface reconstruction
+- interactions with solid objects
+
+Extra Features
+--------------
+If we finish the basic simulation of our project early, we will work on the following extra features:
+
+- realistic fluid rendering with reflections, refractions and cuastics
+- allow music interactions with fluid
+
+	
+Staff Approval
+--------------
+We discussed our project with Aayush during his office hours on Thursday
