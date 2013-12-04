@@ -1,4 +1,4 @@
-var gridSize = 1024;
+var gridSize = 256;
 var numParticles = gridSize*gridSize;
 var debug = false;
 var auto = true;

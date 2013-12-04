@@ -145,7 +145,7 @@
     vec4 particle = texture2D(uParticlePositionData, uv);
     vCoord = aParticleIndex;
     gl_Position = uPMatrix * uMVMatrix * particle;
-    gl_PointSize = 2.0;
+    gl_PointSize = 3.0;
   }
 </script>
 
@@ -168,7 +168,7 @@
   }
 
   void main(void) {
-    gl_FragColor = texture2D(uParticlePositionData, getUVFromIndex(vCoord));
+    gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);//texture2D(uParticlePositionData, getUVFromIndex(vCoord));
   }
 </script>
 
