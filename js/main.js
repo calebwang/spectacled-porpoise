@@ -423,4 +423,8 @@ controls.add(inputs, 'auto');
 controls.add(inputs, 'reset');
 var customContainer = document.getElementById("my-gui-container");
 customContainer.appendChild(controls.domElement);
+
+canvas.onmousedown = handleMouseDown;
+document.onmouseup = handleMouseUp;
+document.onmousemove = handleMouseMove;
 webGLStart();
