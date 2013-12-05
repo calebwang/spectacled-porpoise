@@ -1,7 +1,3 @@
-//var gridSize = 256;
-//var numParticles = gridSize*gridSize;
-//var debug = false;
-//var auto = true;
 var inputs, gridSize, numParticles, debug, auto;
 var Args = function() {
   this.gridSize = 256;
@@ -121,6 +117,9 @@ function createProgram(vs, fs) {
 var renderProgram;
 var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
+mat4.identity(pMatrix);
+var rotationMatrix = mat4.create();
+mat4.identity(rotationMatrix);
 
 var particlePositionBuffer;
 
@@ -372,6 +371,9 @@ function drawScene() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   mat4.perspective(pMatrix, .78539, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+  mat4.multiply(pMatrix, pMatrix, rotationMatrix);
+  console.log(rotationMatrix);
+  console.log(pMatrix);
   mat4.identity(mvMatrix);
   mat4.translate(mvMatrix, mvMatrix,[0.0, 0.0, -5.0]);
 
@@ -394,6 +396,9 @@ function webGLStart() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   document.body.appendChild(canvas);
+  canvas.onmousedown = handleMouseDown;
+  document.onmouseup = handleMouseUp;
+  document.onmousemove = handleMouseMove;
 
   reset();
 }
@@ -414,6 +419,43 @@ function reset() {
   render();
 }
 
+function degToRad(angle) {
+  return angle * Math.PI/180;
+}
+
+var mouseDown = false;
+var lastMouseX = null;
+var lastMouseY = null;
+
+function handleMouseDown(event) {
+  console.log("handle mouse down");
+  mouseDown = true;
+  lastMouseX = event.clientX;
+  lastMouseY = event.clientY;
+}
+
+function handleMouseUp(event) {
+  mouseDown = false;
+}
+
+function handleMouseMove(event) {
+  if (!mouseDown) {
+    return;
+  }
+  console.log("handle mouse move");
+  var newX = event.clientX;
+  var newY = event.clientY;
+
+  var deltaX = newX - lastMouseX;
+  mat4.rotateY(rotationMatrix, rotationMatrix, degToRad(deltaX / 10));
+
+  var deltaY = newY - lastMouseY;
+  mat4.rotateX(rotationMatrix, rotationMatrix, degToRad(deltaY / 10));
+
+  lastMouseX = newX;
+  lastMouseY = newY;
+}
+
 var controls = new DAT.GUI({autoPlace: false});
 inputs = new Args();
 controls.add(inputs, 'gridSize', 100, 1000);
@@ -424,7 +466,4 @@ controls.add(inputs, 'reset');
 var customContainer = document.getElementById("my-gui-container");
 customContainer.appendChild(controls.domElement);
 
-canvas.onmousedown = handleMouseDown;
-document.onmouseup = handleMouseUp;
-document.onmousemove = handleMouseMove;
 webGLStart();
