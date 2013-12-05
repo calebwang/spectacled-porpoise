@@ -1,7 +1,17 @@
-var gridSize = 256;
-var numParticles = gridSize*gridSize;
-var debug = false;
-var auto = true;
+//var gridSize = 256;
+//var numParticles = gridSize*gridSize;
+//var debug = false;
+//var auto = true;
+var inputs, gridSize, numParticles, debug, auto;
+var Args = function() {
+  this.gridSize = 256;
+  this.viscosity = .01;
+  this.debug = false;
+  this.auto = true;
+  this.reset = function() {
+    reset();
+  };
+}
 
 /* Initializing WebGL, if supported by browser */
 var gl;
@@ -389,6 +399,10 @@ function webGLStart() {
 }
 
 function reset() {
+  gridSize = inputs.gridSize;
+  numParticles = gridSize*gridSize;
+  debug = inputs.debug;
+  auto = inputs.auto;
 
   initGL(canvas);
   initParticles();
@@ -400,4 +414,13 @@ function reset() {
   render();
 }
 
+var controls = new DAT.GUI({autoPlace: false});
+inputs = new Args();
+controls.add(inputs, 'gridSize', 100, 1000);
+controls.add(inputs, 'viscosity', .005, .02);
+controls.add(inputs, 'debug');
+controls.add(inputs, 'auto');
+controls.add(inputs, 'reset');
+var customContainer = document.getElementById("my-gui-container");
+customContainer.appendChild(controls.domElement);
 webGLStart();
