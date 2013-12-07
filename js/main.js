@@ -391,7 +391,7 @@ function drawScene() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     mat4.perspective(pMatrix, .78539, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
-    mat4.multiply(pMatrix, pMatrix, rotationMatrix);
+    //mat4.multiply(pMatrix, pMatrix, rotationMatrix);
     console.log(rotationMatrix);
     console.log(pMatrix);
     mat4.identity(mvMatrix);
