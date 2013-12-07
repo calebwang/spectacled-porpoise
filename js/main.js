@@ -1,29 +1,30 @@
-var inputs, gridSize, numParticles, debug, auto;
+/* Global Variables */
+var inputs, gridSize, numParticles, debug, auto, particleRadius, particleScale, clipNear, clipFar;
 var Args = function() {
-    this.gridSize = 256;
-    this.viscosity = 0.01;
+    this.gridSize = 100;
+    this.viscosity = .01;
     this.debug = false;
-    this.auto = true;
+    this.auto = false;
+    this.ssfr = true;
     this.reset = function() {
         reset();
     };
-};
+}
 
 /* Initializing WebGL, if supported by browser */
 var gl;
 
 function initGL(canvas) {
     try {
-        gl = canvas.getContext("experimental-webgl");
+        gl = canvas.getContext("experimental-webgl", {depth: true});
+        gl = WebGLDebugUtils.makeDebugContext(gl);
         gl.viewportWidth = canvas.width;
         gl.viewportHeight = canvas.height;
         if (!gl.getExtension('OES_texture_float')) {
-            alert("Needs OES_texture_float");
+          alert("Needs OES_texture_float");
         }
     } catch(e) {
-    }
-    if (!gl) {
-        alert("Could not initialise WebGL, sorry :( ");
+        alert("Could not initialize WebGL");
     }
 }
 
@@ -40,13 +41,13 @@ function random() {
 
 /* initializes randomly distributedparticles */
 function initParticles() {
-    var particlePositions = [];
-    var particleVelocities = [];
+    var particlePositions = new Array();
+    var particleVelocities = new Array();
     var numP = numParticles;
     while(numP--) {
         var pX = random() * 2 - 1,
-                pY = random() * 2 - 1,
-                pZ = random();
+            pY = random() * 2 - 1,
+            pZ = random();
 
         particlePositions.push(pX);
         particlePositions.push(pY);
@@ -58,7 +59,7 @@ function initParticles() {
         particleVelocities.push(5*(random()*2 - 1));
         particleVelocities.push(1.0);
     }
-
+    console.log(particlePositions);
     particlePositionData = new Float32Array(particlePositions);
     particleVelocityData = new Float32Array(particleVelocities);
     console.log(particleVelocities);
@@ -136,25 +137,31 @@ function enableAttributes(program) {
     }
 }
 function initShaders() {
-    //Create shaders
+
+  //Create shaders
 
     var vs;
     var fs;
     if (debug) {
-        vs = getShader(gl, "debug-vs");
-        fs = getShader(gl, "debug-fs");
+      vs = getShader(gl, "debug-vs");
+      fs = getShader(gl, "debug-fs");
+    } else if(ssfr) {
+      console.log("using ssfr shader");
+      vs = getShader(gl, "ssfr-depth-vs");
+      console.log(vs);
+      fs = getShader(gl, "ssfr-depth-fs");
     } else {
-        vs = getShader(gl, "render-vs");
-        fs = getShader(gl, "render-fs");
+      vs = getShader(gl, "render-vs");
+      fs = getShader(gl, "render-fs");
     }
     renderProgram = createProgram(vs, fs);
-    renderProgram.attributes = [];
+    renderProgram.attributes = []
 
     var physicsvs = getShader(gl, "physics-vs");
     var physicsfs = getShader(gl, "physics-fs");
 
     physicsProgram = createProgram(physicsvs, physicsfs);
-    physicsProgram.attributes = [];
+    physicsProgram.attributes = []
 
     var velocityvs = getShader(gl, "velocity-vs");
     var velocityfs = getShader(gl, "velocity-fs");
@@ -162,7 +169,7 @@ function initShaders() {
     velocityProgram = createProgram(velocityvs, velocityfs);
     velocityProgram.attributes = [];
 
-    // Initialize shader variables and locations
+    //Initialize shader variables and locations
 
     renderProgram.particleIndexAttribute = gl.getAttribLocation(renderProgram, "aParticleIndex");
     renderProgram.attributes.push(renderProgram.particleIndexAttribute);
@@ -170,12 +177,19 @@ function initShaders() {
 
     renderProgram.gridSizeLocation = gl.getUniformLocation(renderProgram, "uGridSize");
 
+    if (ssfr) {
+        renderProgram.particleRadiusLocation = gl.getUniformLocation(renderProgram, "uParticleRadius");
+        renderProgram.particleScaleLocation = gl.getUniformLocation(renderProgram, "uScaleRadius");
+        renderProgram.nearLocation = gl.getUniformLocation(renderProgram, "near");
+        renderProgram.farScaleLocation = gl.getUniformLocation(renderProgram, "far");
+    }
+
     renderProgram.pMatrixUniform = gl.getUniformLocation(renderProgram, "uPMatrix");
     renderProgram.mvMatrixUniform = gl.getUniformLocation(renderProgram, "uMVMatrix");
 
     renderProgram.particlePositionDataLocation = gl.getUniformLocation(renderProgram, "uParticlePositionData");
 
-    // Position program
+    //position program
     physicsProgram.particlePositionDataLocation = gl.getUniformLocation(physicsProgram, "uParticlePositionData");
     physicsProgram.particleVelocityDataLocation = gl.getUniformLocation(physicsProgram, "uParticleVelocityData");
     physicsProgram.viewportSizeLocation = gl.getUniformLocation(physicsProgram, "uViewportSize");
@@ -187,18 +201,19 @@ function initShaders() {
     physicsProgram.attributes.push(physicsProgram.vertexCoordAttribute);
     gl.enableVertexAttribArray(physicsProgram.vertexCoordAttribute);
 
-    // Velocity program
+    //velocity program
     velocityProgram.particlePositionDataLocation = gl.getUniformLocation(velocityProgram, "uParticlePositionData");
     velocityProgram.particleVelocityDataLocation = gl.getUniformLocation(velocityProgram, "uParticleVelocityData");
     velocityProgram.viewportSizeLocation = gl.getUniformLocation(velocityProgram, "uViewportSize");
     velocityProgram.gridSizeLocation = gl.getUniformLocation(velocityProgram, "uGridSize");
+
 
     velocityProgram.vertexCoordAttribute = gl.getAttribLocation(velocityProgram, "aVertexCoord");
     console.log(velocityProgram.vertexCoordAttribute);
     velocityProgram.attributes.push(velocityProgram.vertexCoordAttribute);
     gl.enableVertexAttribArray(velocityProgram.vertexCoordAttribute);
 
-    // Create buffers and textures and framebuffers
+    //Create buffers and textures and framebuffers
     // Create particles
     // Not needed
     particlePositionBuffer = gl.createBuffer();
@@ -223,17 +238,18 @@ function initShaders() {
 
     // Create quad vertices
     var viewportQuadVertices = new Float32Array([
-        -1.0, -1.0,
-        1.0, -1.0,
-        -1.0, 1.0,
-        1.0, 1.0
+           -1.0, -1.0,
+           1.0, -1.0,
+           -1.0, 1.0,
+           1.0, 1.0
     ]);
 
     viewportQuadBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, viewportQuadBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, viewportQuadVertices, gl.STATIC_DRAW);
 
-    // particlePosition
+
+    //particlePosition
     particlePositionTexture = gl.createTexture();
     particlePositionTexture.unit = 0;
 
@@ -241,11 +257,12 @@ function initShaders() {
     gl.bindTexture(gl.TEXTURE_2D, particlePositionTexture);
 
     gl.texImage2D(
-        // target, level, internal format, width, height
-        gl.TEXTURE_2D, 0, gl.RGBA, gridSize, gridSize,
-        // border, data format, data type, pixels
-        0, gl.RGBA, gl.FLOAT, particlePositionData
+    // target, level, internal format, width, height
+    gl.TEXTURE_2D, 0, gl.RGBA, gridSize, gridSize,
+    // border, data format, data type, pixels
+    0, gl.RGBA, gl.FLOAT, particlePositionData
     );
+
 
     // Disable bilinear filtering when minifying / magnifying texture
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -262,7 +279,6 @@ function initShaders() {
     gl.bindFramebuffer(gl.FRAMEBUFFER, particlePositionFramebuffer);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, particlePositionTexture, 0);
 
-
     // particle velocity
     particleVelocityTexture = gl.createTexture();
     particleVelocityTexture.unit = 0;
@@ -271,8 +287,8 @@ function initShaders() {
     gl.bindTexture(gl.TEXTURE_2D, particleVelocityTexture);
 
     gl.texImage2D(
-        gl.TEXTURE_2D, 0, gl.RGBA, gridSize, gridSize,
-        0, gl.RGBA, gl.FLOAT, particleVelocityData
+    gl.TEXTURE_2D, 0, gl.RGBA, gridSize, gridSize,
+    0, gl.RGBA, gl.FLOAT, particleVelocityData
     );
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -289,6 +305,13 @@ function initShaders() {
     // Set uniforms
     gl.useProgram(renderProgram);
     gl.uniform1i(renderProgram.particlePositionDataLocation, particlePositionTexture.unit);
+    if (ssfr) {
+        gl.uniform1f(renderProgram.particleRadiusLocation, particleRadius);
+        gl.uniform1f(renderProgram.particleScaleLocation, particleScale);
+        gl.uniform1f(renderProgram.nearLocation, clipNear);
+        gl.uniform1f(renderProgram.farLocation, clipFar);
+    }
+
     gl.useProgram(renderProgram);
 
     gl.uniform1f(renderProgram.gridSizeLocation, gridSize);
@@ -367,12 +390,13 @@ function drawScene() {
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    mat4.perspective(pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
-    mat4.multiply(pMatrix, pMatrix, rotationMatrix);
+    mat4.perspective(pMatrix, .78539, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+    //mat4.multiply(pMatrix, pMatrix, rotationMatrix);
     console.log(rotationMatrix);
     console.log(pMatrix);
     mat4.identity(mvMatrix);
-    mat4.translate(mvMatrix, mvMatrix,[0.0, 0.0, -5.0]);
+    mat4.translate(mvMatrix, mvMatrix,[0.0, 0.0, -10.0]);
+    mat4.multiply(mvMatrix, mvMatrix, rotationMatrix);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, particleIndexBuffer);
     gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
@@ -405,6 +429,11 @@ function reset() {
     numParticles = gridSize*gridSize;
     debug = inputs.debug;
     auto = inputs.auto;
+    ssfr = inputs.ssfr;
+    particleRadius = .01;
+    particleScale = 100;
+    clipNear = 5.0;
+    clipFar = -5.0;
 
     initGL(canvas);
     initParticles();
@@ -458,6 +487,7 @@ inputs = new Args();
 controls.add(inputs, 'gridSize', 100, 1000);
 controls.add(inputs, 'viscosity', 0.005, 0.02);
 controls.add(inputs, 'debug');
+controls.add(inputs, 'ssfr');
 controls.add(inputs, 'auto');
 controls.add(inputs, 'reset');
 var customContainer = document.getElementById("my-gui-container");
