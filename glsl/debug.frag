@@ -1,4 +1,3 @@
-
 #line 0 10
 precision mediump float;
 
@@ -16,5 +15,5 @@ vec2 getUVFromIndex(float particleNumber) {
 }
 
 void main(void) {
-    gl_FragColor = texture2D(uParticleData, getUVFromIndex(vCoord));
+    gl_FragColor = texture2D(uParticlePositionData, getUVFromIndex(vCoord));
 }

@@ -1,4 +1,3 @@
-
 #line 0 10
 precision mediump float;
 
