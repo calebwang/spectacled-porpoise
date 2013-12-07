@@ -1,9 +1,11 @@
-var inputs, gridSize, numParticles, debug, auto;
+/* Global Variables */
+var inputs, gridSize, numParticles, debug, auto, particleRadius, particleScale, clipNear, clipFar;
 var Args = function() {
-  this.gridSize = 256;
+  this.gridSize = 100;
   this.viscosity = .01;
   this.debug = false;
-  this.auto = true;
+  this.auto = false;
+  this.ssfr = true;
   this.reset = function() {
     reset();
   };
@@ -14,7 +16,8 @@ var gl;
 
 function initGL(canvas) {
   try {
-    gl = canvas.getContext("experimental-webgl");
+    gl = canvas.getContext("experimental-webgl", {depth: true});
+    gl = WebGLDebugUtils.makeDebugContext(gl);
     gl.viewportWidth = canvas.width;
     gl.viewportHeight = canvas.height;
     if (!gl.getExtension('OES_texture_float')) {
@@ -58,7 +61,7 @@ function initParticles() {
     particleVelocities.push(5*(random()*2 - 1));
     particleVelocities.push(1.0);
   }
-
+  console.log(particlePositions);
   particlePositionData = new Float32Array(particlePositions);
   particleVelocityData = new Float32Array(particleVelocities);
   console.log(particleVelocities);
@@ -142,6 +145,11 @@ function initShaders() {
   if (debug) {
       vs = getShader(gl, "debug-vs");
       fs = getShader(gl, "debug-fs");
+  } else if(ssfr) {
+      console.log("using ssfr shader");
+      vs = getShader(gl, "ssfr-depth-vs");
+      console.log(vs);
+      fs = getShader(gl, "ssfr-depth-fs");
   } else {
       vs = getShader(gl, "render-vs");
       fs = getShader(gl, "render-fs");
@@ -168,6 +176,13 @@ function initShaders() {
   gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
 
   renderProgram.gridSizeLocation = gl.getUniformLocation(renderProgram, "uGridSize");
+
+  if (ssfr) {
+    renderProgram.particleRadiusLocation = gl.getUniformLocation(renderProgram, "uParticleRadius");
+    renderProgram.particleScaleLocation = gl.getUniformLocation(renderProgram, "uScaleRadius");
+    renderProgram.nearLocation = gl.getUniformLocation(renderProgram, "near");
+    renderProgram.farScaleLocation = gl.getUniformLocation(renderProgram, "far");
+  }
 
   renderProgram.pMatrixUniform = gl.getUniformLocation(renderProgram, "uPMatrix");
   renderProgram.mvMatrixUniform = gl.getUniformLocation(renderProgram, "uMVMatrix");
@@ -264,7 +279,6 @@ function initShaders() {
   gl.bindFramebuffer(gl.FRAMEBUFFER, particlePositionFramebuffer);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, particlePositionTexture, 0);
 
-
   // particle velocity
   particleVelocityTexture = gl.createTexture();
   particleVelocityTexture.unit = 0;
@@ -291,6 +305,13 @@ function initShaders() {
   // Set uniforms
   gl.useProgram(renderProgram);
   gl.uniform1i(renderProgram.particlePositionDataLocation, particlePositionTexture.unit);
+  if (ssfr) {
+    gl.uniform1f(renderProgram.particleRadiusLocation, particleRadius);
+    gl.uniform1f(renderProgram.particleScaleLocation, particleScale);
+    gl.uniform1f(renderProgram.nearLocation, clipNear);
+    gl.uniform1f(renderProgram.farLocation, clipFar);
+  }
+
   gl.useProgram(renderProgram);
 
   gl.uniform1f(renderProgram.gridSizeLocation, gridSize);
@@ -309,6 +330,7 @@ function initShaders() {
   //What is this instead of 0?
   gl.uniform1i(velocityProgram.particleVelocityDataLocation, 1);
   gl.uniform1f(velocityProgram.gridSizeLocation, gridSize);
+
 }
 
 /* set perspective and translation matricies so shader can read */
@@ -375,7 +397,7 @@ function drawScene() {
   console.log(rotationMatrix);
   console.log(pMatrix);
   mat4.identity(mvMatrix);
-  mat4.translate(mvMatrix, mvMatrix,[0.0, 0.0, -5.0]);
+  mat4.translate(mvMatrix, mvMatrix,[0.0, 0.0, -10.0]);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, particleIndexBuffer);
   gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
@@ -408,6 +430,11 @@ function reset() {
   numParticles = gridSize*gridSize;
   debug = inputs.debug;
   auto = inputs.auto;
+  ssfr = inputs.ssfr;
+  particleRadius = .01;
+  particleScale = 100;
+  clipNear = 5.0;
+  clipFar = -5.0;
 
   initGL(canvas);
   initParticles();
@@ -461,6 +488,7 @@ inputs = new Args();
 controls.add(inputs, 'gridSize', 100, 1000);
 controls.add(inputs, 'viscosity', .005, .02);
 controls.add(inputs, 'debug');
+controls.add(inputs, 'ssfr');
 controls.add(inputs, 'auto');
 controls.add(inputs, 'reset');
 var customContainer = document.getElementById("my-gui-container");
