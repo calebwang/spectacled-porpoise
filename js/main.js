@@ -5,7 +5,7 @@ var Args = function() {
   this.viscosity = .01;
   this.debug = false;
   this.auto = false;
-  this.ssfr = true;
+  this.surface = true;
   this.reset = function() {
     reset();
   };
@@ -17,6 +17,7 @@ var gl;
 function initGL(canvas) {
   try {
     gl = canvas.getContext("experimental-webgl", {depth: true});
+    // makes webgl errors show up as an alert
     gl = WebGLDebugUtils.makeDebugContext(gl);
     gl.viewportWidth = canvas.width;
     gl.viewportHeight = canvas.height;
@@ -120,6 +121,7 @@ function createProgram(vs, fs) {
 var renderProgram;
 var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
+var invpMatrix = mat4.create();
 mat4.identity(pMatrix);
 var rotationMatrix = mat4.create();
 mat4.identity(rotationMatrix);
@@ -180,12 +182,13 @@ function initShaders() {
   if (ssfr) {
     renderProgram.particleRadiusLocation = gl.getUniformLocation(renderProgram, "uParticleRadius");
     renderProgram.particleScaleLocation = gl.getUniformLocation(renderProgram, "uScaleRadius");
-    renderProgram.nearLocation = gl.getUniformLocation(renderProgram, "near");
-    renderProgram.farScaleLocation = gl.getUniformLocation(renderProgram, "far");
+    renderProgram.viewportLocation = gl.getUniformLocation(renderProgram, "viewport");
+    
   }
 
   renderProgram.pMatrixUniform = gl.getUniformLocation(renderProgram, "uPMatrix");
   renderProgram.mvMatrixUniform = gl.getUniformLocation(renderProgram, "uMVMatrix");
+  renderProgram.invpMatrixUniform = gl.getUniformLocation(renderProgram, "invPMatrix");
 
   renderProgram.particlePositionDataLocation = gl.getUniformLocation(renderProgram, "uParticlePositionData");
 
@@ -308,8 +311,7 @@ function initShaders() {
   if (ssfr) {
     gl.uniform1f(renderProgram.particleRadiusLocation, particleRadius);
     gl.uniform1f(renderProgram.particleScaleLocation, particleScale);
-    gl.uniform1f(renderProgram.nearLocation, clipNear);
-    gl.uniform1f(renderProgram.farLocation, clipFar);
+    gl.uniform4fv(renderProgram.viewportLocation, gl.viewport);
   }
 
   gl.useProgram(renderProgram);
@@ -337,6 +339,7 @@ function initShaders() {
 function setMatrixUniforms() {
   gl.uniformMatrix4fv(renderProgram.pMatrixUniform, false, pMatrix);
   gl.uniformMatrix4fv(renderProgram.mvMatrixUniform, false, mvMatrix);
+  gl.uniformMatrix4fv(renderProgram.invpMatrixUniform, false, invpMatrix);
 }
 
 function render() {
@@ -394,6 +397,7 @@ function drawScene() {
 
   mat4.perspective(pMatrix, .78539, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
   mat4.multiply(pMatrix, pMatrix, rotationMatrix);
+  mat4.inverse(pMatrix, invpMatrix);
   console.log(rotationMatrix);
   console.log(pMatrix);
   mat4.identity(mvMatrix);
@@ -430,7 +434,7 @@ function reset() {
   numParticles = gridSize*gridSize;
   debug = inputs.debug;
   auto = inputs.auto;
-  ssfr = inputs.ssfr;
+  ssfr = inputs.surface;
   particleRadius = .01;
   particleScale = 100;
   clipNear = 5.0;
@@ -442,6 +446,7 @@ function reset() {
 
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
+  gl.depthFunc(gl.LEQUAL);
 
   render();
 }
@@ -485,10 +490,10 @@ function handleMouseMove(event) {
 
 var controls = new DAT.GUI({autoPlace: false});
 inputs = new Args();
-controls.add(inputs, 'gridSize', 100, 1000);
+controls.add(inputs, 'gridSize', 10, 1000);
 controls.add(inputs, 'viscosity', .005, .02);
 controls.add(inputs, 'debug');
-controls.add(inputs, 'ssfr');
+controls.add(inputs, 'surface');
 controls.add(inputs, 'auto');
 controls.add(inputs, 'reset');
 var customContainer = document.getElementById("my-gui-container");
