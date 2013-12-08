@@ -6,9 +6,17 @@ var Simulation = function(gl, programs) {
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
+    this.ssfr = true;
+
+    this.setPrograms();
 
     this.numParticles = this.gridSize*this.gridSize;
     this.parGridSide = this.gridSize;
+    this.particleRadius = 0.01;
+    this.particleScale = 100;
+    this.clipNear = 5.0;
+    this.clipFar = -5.0;
+
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
     this.spaceSide = 4; // The length of a dimension in world space
@@ -44,9 +52,9 @@ var Simulation = function(gl, programs) {
 // Initialize shader variables and locations
 Simulation.prototype.initShaders = function() {
     var gl = this.gl;
-    var renderProgram = this.programs['render'];
-    var physicsProgram = this.programs['physics'];
-    var velocityProgram = this.programs['velocity'];
+    var renderProgram = this.renderProgram;
+    var physicsProgram = this.physicsProgram;
+    var velocityProgram = this.velocityProgram;
 
     // Render program
     renderProgram.particleIndexAttribute = gl.getAttribLocation(renderProgram, "aParticleIndex");
@@ -54,6 +62,13 @@ Simulation.prototype.initShaders = function() {
     gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
 
     renderProgram.gridSizeLocation = gl.getUniformLocation(renderProgram, "uGridSize");
+
+    if (this.ssfr) {
+        renderProgram.particleRadiusLocation = gl.getUniformLocation(renderProgram, "uParticleRadius");
+        renderProgram.particleScaleLocation = gl.getUniformLocation(renderProgram, "uScaleRadius");
+        renderProgram.nearLocation = gl.getUniformLocation(renderProgram, "near");
+        renderProgram.farScaleLocation = gl.getUniformLocation(renderProgram, "far");
+    }
 
     renderProgram.pMatrixUniform = gl.getUniformLocation(renderProgram, "uPMatrix");
     renderProgram.mvMatrixUniform = gl.getUniformLocation(renderProgram, "uMVMatrix");
@@ -146,14 +161,20 @@ Simulation.prototype.initFramebuffers = function() {
 Simulation.prototype.initUniforms = function() {
     var gl = this.gl;
     // Set uniforms
-    var renderProgram = this.programs['render'];
-    var physicsProgram = this.programs['physics'];
-    var velocityProgram = this.programs['velocity'];
+    var renderProgram = this.renderProgram;
+    var physicsProgram = this.physicsProgram;
+    var velocityProgram = this.velocityProgram;
     var s = this.parGridSide;
 
     // Initialize render program uniforms
     gl.useProgram(renderProgram);
     gl.uniform1f(renderProgram.gridSizeLocation, s);
+    if (this.ssfr) {
+        gl.uniform1f(renderProgram.particleRadiusLocation, this.particleRadius);
+        gl.uniform1f(renderProgram.particleScaleLocation, this.particleScale);
+        gl.uniform1f(renderProgram.nearLocation, this.clipNear);
+        gl.uniform1f(renderProgram.farLocation, this.clipFar);
+    }
 
     this.setMatrixUniforms();
 
@@ -170,7 +191,8 @@ Simulation.prototype.initUniforms = function() {
 
 Simulation.prototype.setMatrixUniforms = function() {
     var gl = this.gl;
-    var renderProgram = this.programs['render'];
+    var renderProgram = this.renderProgram;
+
     // Initialize matrix uniforms
     gl.uniformMatrix4fv(renderProgram.pMatrixUniform, false, this.pMatrix);
     gl.uniformMatrix4fv(renderProgram.mvMatrixUniform, false, this.mvMatrix);
@@ -180,7 +202,7 @@ Simulation.prototype.updateVelocities = function() {
     var gl = this.gl;
     console.log("updating velocities");
 
-    var velocityProgram = this.programs['velocity'];
+    var velocityProgram = this.velocityProgram;
     enableAttributes(gl, velocityProgram);
     gl.useProgram(velocityProgram);
 
@@ -207,7 +229,7 @@ Simulation.prototype.updatePositions = function() {
     var gl = this.gl;
     console.log('updating scene');
 
-    var physicsProgram = this.programs['physics'];
+    var physicsProgram = this.physicsProgram;
     enableAttributes(gl, physicsProgram);
     gl.useProgram(physicsProgram);
 
@@ -234,7 +256,7 @@ Simulation.prototype.drawScene = function() {
     var gl = this.gl;
     console.log('rendering scene');
 
-    var renderProgram = this.programs['render'];
+    var renderProgram = this.renderProgram;
     enableAttributes(gl, renderProgram);
     gl.useProgram(renderProgram);
 
@@ -252,7 +274,7 @@ Simulation.prototype.drawScene = function() {
     console.log(this.rotationMatrix);
     console.log(this.pMatrix);
     mat4.identity(this.mvMatrix);
-    mat4.translate(this.mvMatrix, this.mvMatrix,[0.0, 0.0, -5.0]);
+    mat4.translate(this.mvMatrix, this.mvMatrix,[0.0, 0.0, -10.0]);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
     gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
@@ -265,9 +287,20 @@ Simulation.prototype.drawScene = function() {
     gl.disable(gl.BLEND);
 };
 
+Simulation.prototype.setPrograms = function() {
+    if (this.ssfr) {
+        this.renderProgram = this.programs['ssfr-depth'];
+    } else {
+        this.renderProgram = this.programs['render'];
+    }
+    this.physicsProgram = this.programs['physics'];
+    this.velocityProgram = this.programs['velocity'];
+};
+
 Simulation.prototype.reset = function() {
     this.numParticles = this.gridSize*this.gridSize;
     this.parGridSide = this.gridSize;
+    this.setPrograms();
     this.initParticles();
     this.initBuffers();
     this.initTextures();

@@ -13,7 +13,8 @@ var initCanvas = function() {
 };
 
 var initGL = function(canvas) {
-    var gl = WebGLUtils.setupWebGL(canvas, {antialias: false, stencil: true});
+    var gl = WebGLUtils.setupWebGL(canvas, {depth: true, antialias: false, stencil: true});
+    gl = WebGLDebugUtils.makeDebugContext(gl);
     gl.viewportWidth = canvas.width;
     gl.viewportHeight = canvas.height;
     if (!gl.getExtension("OES_texture_float")) {
@@ -145,6 +146,7 @@ var setupControls = function(simulator) {
     controls.add(simulator, 'gridSize', 100, 1000);
     controls.add(simulator, 'viscosity', 0.005, 0.02);
     controls.add(simulator, 'debug');
+    controls.add(simulator, 'ssfr');
     controls.add(simulator, 'auto');
     controls.add(simulator, 'reset');
     var customContainer = document.getElementById("my-gui-container");
@@ -198,7 +200,7 @@ var setMouseHandlers = function(canvas, simulator) {
 $(document).ready(function() {
     var canvas = initCanvas();
     var gl = initGL(canvas);
-    var shaders = ['render', 'physics', 'velocity'];
+    var shaders = ['physics', 'velocity', 'ssfr-depth'];
     var programs = new Programs(gl);
     programs.loadShaders(shaders, function() {
         var simulator = new Simulation(gl, programs);
