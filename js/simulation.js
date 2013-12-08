@@ -20,17 +20,17 @@ var Simulation = function(gl, programs) {
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
     this.spaceSide = 4; // The length of a dimension in world space
-    // this.particleDiameter = 1; // The diameter of a particle / side length of voxel
+    this.particleDiameter = 1; // The diameter of a particle / side length of voxel
 
-    // // True length of a unit in metagrid space: the 'L' in the calculation
-    // this.metagridUnit = this.spaceSide/this.particleDiameter;
-    // // Length of side of metagrid in voxel space: the 'D' in the calculation
-    // this.metagridSide = Math.sqrt(this.metagridUnit);
-    // console.log(this.metagridUnit);
-    // console.log(this.metagridSide);
-    // // Total side length of the 2D neighborhood grid
-    // this.neighborGridSide = this.metagridUnit * this.metagridSide;
-    // console.log(this.neighborGridSide);
+    // True length of a unit in metagrid space: the 'L' in the calculation
+    this.metagridUnit = this.spaceSide/this.particleDiameter;
+    // Length of side of metagrid in voxel space: the 'D' in the calculation
+    this.metagridSide = Math.sqrt(this.metagridUnit);
+    console.log(this.metagridUnit);
+    console.log(this.metagridSide);
+    // Total side length of the 2D neighborhood grid
+    this.neighborGridSide = this.metagridUnit * this.metagridSide;
+
     var mvMatrix = this.mvMatrix = mat4.create();
     var pMatrix = this.pMatrix = mat4.create();
     mat4.identity(pMatrix);
@@ -56,6 +56,7 @@ Simulation.prototype.initShaders = function() {
     var ssfrProgram = this.programs['ssfr-depth'];
     var physicsProgram = this.programs['physics'];
     var velocityProgram = this.programs['velocity'];
+    var neighborProgram = this.programs['neighbor'];
 
     // Render program
     renderProgram.particleIndexAttribute = gl.getAttribLocation(renderProgram, "aParticleIndex");
@@ -110,6 +111,22 @@ Simulation.prototype.initShaders = function() {
     velocityProgram.attributes.push(velocityProgram.vertexCoordAttribute);
     gl.enableVertexAttribArray(velocityProgram.vertexCoordAttribute);
 
+    // Neighbor program
+    neighborProgram.particleIndex = gl.getAttribLocation(neighborProgram, "a_particleIndex");
+    neighborProgram.attributes.push(neighborProgram.particleIndex);
+    gl.enableVertexAttribArray(neighborProgram.particleIndex);
+
+    // Resolution of the particle position texture
+    neighborProgram.u_parResolution = gl.getUniformLocation(neighborProgram, "u_partex_resolution");
+    // Resolution of the world space
+    neighborProgram.u_spaceResolution = gl.getUniformLocation(neighborProgram, "u_space_resolution");
+    // Resolution of the world space
+    neighborProgram.u_ngridResolution = gl.getUniformLocation(neighborProgram, "u_ngrid_resolution");
+    neighborProgram.u_diameter = gl.getUniformLocation(neighborProgram, "u_particleDiameter");
+    neighborProgram.u_ngrid_L = gl.getUniformLocation(neighborProgram, "u_ngrid_L");
+    neighborProgram.u_ngrid_D = gl.getUniformLocation(neighborProgram, "u_ngrid_D");
+    neighborProgram.u_numParticles = gl.getUniformLocation(neighborProgram, "u_numParticles");
+    neighborProgram.u_particlePositions = gl.getUniformLocation(neighborProgram, "u_particlePositions");
 };
 
 Simulation.prototype.initBuffers = function() {
@@ -159,6 +176,8 @@ Simulation.prototype.initTextures = function() {
     this.particlePositionTexture = ppt;
     var pvt = initTexture(gl, this.parGridSide, this.particleVelocityData);
     this.particleVelocityTexture = pvt;
+    var nt = initTexture(gl, this.neighborGridSide, null);
+    this.neighborTexture = nt;
 };
 
 Simulation.prototype.initFramebuffers = function() {
@@ -168,6 +187,8 @@ Simulation.prototype.initFramebuffers = function() {
     this.particlePositionFramebuffer = ppfb;
     var pvfb = initOutputFramebuffer(gl, this.parGridSide, this.particleVelocityTexture);
     this.particleVelocityFramebuffer = pvfb;
+    var nfb = initOutputFramebuffer(gl, this.neighborGridSide, this.neighborTexture);
+    this.neighborFramebuffer = nfb;
 };
 
 Simulation.prototype.initUniforms = function() {
@@ -176,6 +197,7 @@ Simulation.prototype.initUniforms = function() {
     var renderProgram = this.renderProgram;
     var physicsProgram = this.physicsProgram;
     var velocityProgram = this.velocityProgram;
+    var neighborProgram = this.neighborProgram;
     var s = this.parGridSide;
 
     // Initialize render program uniforms
@@ -199,6 +221,17 @@ Simulation.prototype.initUniforms = function() {
     gl.useProgram(velocityProgram);
     gl.uniform2f(velocityProgram.viewportSizeLocation, s, s);
     gl.uniform1f(velocityProgram.gridSizeLocation, s);
+
+    // Initialize neighbor program uniforms
+    gl.useProgram(neighborProgram);
+    gl.uniform2f(neighborProgram.u_parResolution, s, s);
+    gl.uniform2f(neighborProgram.u_spaceResolution, this.spaceSide, this.spaceSide);
+    gl.uniform2f(neighborProgram.u_ngridResolution, this.neighborGridSide, this.neighborGridSide);
+    gl.uniform1f(neighborProgram.u_diameter, this.particleDiameter);
+    gl.uniform1f(neighborProgram.u_ngrid_L, this.metagridUnit);
+    gl.uniform1f(neighborProgram.u_ngrid_D, this.metagridSide);
+    gl.uniform1f(neighborProgram.u_numParticles, this.numParticles);
+
 };
 
 Simulation.prototype.setMatrixUniforms = function() {
@@ -266,6 +299,73 @@ Simulation.prototype.updatePositions = function() {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 };
 
+Simulation.prototype.updateNeighbors = function() {
+    var gl = this.gl;
+    var s = this.neighborGridSide;
+    var n = this.numParticles;
+
+    console.log('computing neighbors');
+    var neighborProgram = this.neighborProgram;
+    enableAttributes(gl, neighborProgram);
+    gl.useProgram(neighborProgram);
+
+    // Set TEXTURE0 to the particle position texture
+    gl.uniform1i(neighborProgram.u_particlePositions, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
+
+    // We'll be doing this computation in four passes
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.neighborsBuffer);
+    gl.viewport(0, 0, s, s);
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
+    gl.enableVertexAttribArray(neighborProgram.particleIndex);
+    gl.vertexAttribPointer(neighborProgram.particleIndex, 1, gl.FLOAT, false, 0, 0);
+
+    //Enable both stencil and depth test
+    gl.enable(gl.STENCIL_TEST);
+    gl.enable(gl.DEPTH_TEST);
+
+    // // PASS 1: Place all the closest indices into RED
+    gl.colorMask(true, false, false, false);
+    gl.depthFunc(gl.LESS);
+    gl.drawArrays(gl.POINTS, 0, n);
+
+    // PASS 2: Pass larger values in the depth test, but fail farther
+    // particles with the stencil test
+    // Get the resulting particle index and place into GREEN
+    gl.colorMask(false, true, false, false);
+    gl.depthFunc(gl.GREATER);
+    gl.stencilFunc(gl.GREATER, 1, 1);
+    gl.stencilOp(gl.KEEP, gl.KEEP, gl.INCR);
+    gl.clear(gl.STENCIL_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, n);
+
+    // PASS 3: Same idea, but get third farthest particle index and place
+    // into BLUE
+    gl.colorMask(false, false, true, false);
+    gl.clear(gl.STENCIL_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, n);
+
+    // PASS 4: Place 4th particle into ALPHA
+    gl.colorMask(false, false, false, true);
+    gl.clear(gl.STENCIL_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, n);
+
+    // var output = new Uint8Array(s * s *4);
+    // gl.readPixels(0, 0, s, s, gl.RGBA, gl.UNSIGNED_BYTE, output);
+    // console.log(output);
+    // END
+
+    // Clean up
+    gl.colorMask(true, true, true, true);
+    gl.disable(gl.STENCIL_TEST);
+    gl.depthFunc(gl.LESS);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+};
+
 Simulation.prototype.drawScene = function() {
     var gl = this.gl;
     console.log('rendering scene');
@@ -310,6 +410,7 @@ Simulation.prototype.setPrograms = function() {
     }
     this.physicsProgram = this.programs['physics'];
     this.velocityProgram = this.programs['velocity'];
+    this.neighborProgram = this.programs['neighbor'];
 };
 
 Simulation.prototype.reset = function() {
