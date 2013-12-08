@@ -52,9 +52,10 @@ var Simulation = function(gl, programs) {
 // Initialize shader variables and locations
 Simulation.prototype.initShaders = function() {
     var gl = this.gl;
-    var renderProgram = this.renderProgram;
-    var physicsProgram = this.physicsProgram;
-    var velocityProgram = this.velocityProgram;
+    var renderProgram = this.programs['render'];
+    var ssfrProgram = this.programs['ssfr-depth'];
+    var physicsProgram = this.programs['physics'];
+    var velocityProgram = this.programs['velocity'];
 
     // Render program
     renderProgram.particleIndexAttribute = gl.getAttribLocation(renderProgram, "aParticleIndex");
@@ -63,17 +64,27 @@ Simulation.prototype.initShaders = function() {
 
     renderProgram.gridSizeLocation = gl.getUniformLocation(renderProgram, "uGridSize");
 
-    if (this.ssfr) {
-        renderProgram.particleRadiusLocation = gl.getUniformLocation(renderProgram, "uParticleRadius");
-        renderProgram.particleScaleLocation = gl.getUniformLocation(renderProgram, "uScaleRadius");
-        renderProgram.nearLocation = gl.getUniformLocation(renderProgram, "near");
-        renderProgram.farScaleLocation = gl.getUniformLocation(renderProgram, "far");
-    }
-
     renderProgram.pMatrixUniform = gl.getUniformLocation(renderProgram, "uPMatrix");
     renderProgram.mvMatrixUniform = gl.getUniformLocation(renderProgram, "uMVMatrix");
 
     renderProgram.particlePositionDataLocation = gl.getUniformLocation(renderProgram, "uParticlePositionData");
+
+    // ssfr depth program
+    ssfrProgram.particleIndexAttribute = gl.getAttribLocation(ssfrProgram, "aParticleIndex");
+    ssfrProgram.attributes.push(ssfrProgram.particleIndexAttribute);
+    gl.enableVertexAttribArray(ssfrProgram.particleIndexAttribute);
+
+    ssfrProgram.gridSizeLocation = gl.getUniformLocation(ssfrProgram, "uGridSize");
+
+    ssfrProgram.particleRadiusLocation = gl.getUniformLocation(ssfrProgram, "uParticleRadius");
+    ssfrProgram.particleScaleLocation = gl.getUniformLocation(ssfrProgram, "uScaleRadius");
+    ssfrProgram.nearLocation = gl.getUniformLocation(ssfrProgram, "near");
+    ssfrProgram.farScaleLocation = gl.getUniformLocation(ssfrProgram, "far");
+
+    ssfrProgram.pMatrixUniform = gl.getUniformLocation(ssfrProgram, "uPMatrix");
+    ssfrProgram.mvMatrixUniform = gl.getUniformLocation(ssfrProgram, "uMVMatrix");
+
+    ssfrProgram.particlePositionDataLocation = gl.getUniformLocation(ssfrProgram, "uParticlePositionData");
 
     // Physics program
     physicsProgram.particlePositionDataLocation = gl.getUniformLocation(physicsProgram, "uParticlePositionData");

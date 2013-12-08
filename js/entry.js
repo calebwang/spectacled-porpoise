@@ -200,7 +200,7 @@ var setMouseHandlers = function(canvas, simulator) {
 $(document).ready(function() {
     var canvas = initCanvas();
     var gl = initGL(canvas);
-    var shaders = ['physics', 'velocity', 'ssfr-depth'];
+    var shaders = ['render', 'physics', 'velocity', 'ssfr-depth'];
     var programs = new Programs(gl);
     programs.loadShaders(shaders, function() {
         var simulator = new Simulation(gl, programs);
