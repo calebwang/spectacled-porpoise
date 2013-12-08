@@ -281,11 +281,12 @@ Simulation.prototype.drawScene = function() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
-    mat4.multiply(this.pMatrix, this.pMatrix, this.rotationMatrix);
+    mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
     console.log(this.rotationMatrix);
     console.log(this.pMatrix);
     mat4.identity(this.mvMatrix);
     mat4.translate(this.mvMatrix, this.mvMatrix,[0.0, 0.0, -10.0]);
+    mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
     gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
