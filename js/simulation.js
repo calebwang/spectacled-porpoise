@@ -101,6 +101,7 @@ Simulation.prototype.initShaders = function() {
     // Velocity program
     velocityProgram.particlePositionDataLocation = gl.getUniformLocation(velocityProgram, "uParticlePositionData");
     velocityProgram.particleVelocityDataLocation = gl.getUniformLocation(velocityProgram, "uParticleVelocityData");
+    velocityProgram.spaceSideLocation = gl.getUniformLocation(velocityProgram, "uSpaceSide");
     velocityProgram.viewportSizeLocation = gl.getUniformLocation(velocityProgram, "uViewportSize");
     velocityProgram.gridSizeLocation = gl.getUniformLocation(velocityProgram, "uGridSize");
 
@@ -136,9 +137,9 @@ Simulation.prototype.initParticles = function() {
     }
 
     for (i = 0; i < (n*4); i += 4) {
-        ppd[i] = Math.random() * 2 - 1;
-        ppd[i + 1] = Math.random() * 2 - 1;
-        ppd[i + 2] = Math.random() * 2 - 1;
+        ppd[i] = Math.random() * l;
+        ppd[i + 1] = Math.random() * l;
+        ppd[i + 2] = Math.random() * l;
         ppd[i + 3] = 1;
 
         pvd[i] = (Math.random() * 2 - 1) * 5;
@@ -227,6 +228,8 @@ Simulation.prototype.updateVelocities = function() {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.particleVelocityTexture);
 
+    gl.uniform1f(velocityProgram.spaceSideLocation, this.spaceSide);
+
     gl.viewport(0, 0, this.parGridSide, this.parGridSide);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
@@ -285,7 +288,7 @@ Simulation.prototype.drawScene = function() {
     console.log(this.rotationMatrix);
     console.log(this.pMatrix);
     mat4.identity(this.mvMatrix);
-    mat4.translate(this.mvMatrix, this.mvMatrix,[0.0, 0.0, -10.0]);
+    mat4.translate(this.mvMatrix, this.mvMatrix,[-this.spaceSide/2, -this.spaceSide/2, -3.0 * this.spaceSide]);
     mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
