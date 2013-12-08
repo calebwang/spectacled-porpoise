@@ -149,6 +149,7 @@ var setupControls = function(simulator) {
     controls.add(simulator, 'ssfr');
     controls.add(simulator, 'auto');
     controls.add(simulator, 'reset');
+    controls.add(simulator, 'mass');
     var customContainer = document.getElementById("my-gui-container");
     customContainer.appendChild(controls.domElement);
 };
@@ -200,7 +201,7 @@ var setMouseHandlers = function(canvas, simulator) {
 $(document).ready(function() {
     var canvas = initCanvas();
     var gl = initGL(canvas);
-    var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth'];
+    var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'density'];
     var programs = new Programs(gl);
     programs.loadShaders(shaders, function() {
         var simulator = new Simulation(gl, programs);
@@ -222,6 +223,7 @@ $(document).ready(function() {
                 requestAnimFrame(render);
             }
             simulator.updateNeighbors();
+            simulator.updateDensities();
             simulator.updateVelocities();
             simulator.updatePositions();
             simulator.drawScene();

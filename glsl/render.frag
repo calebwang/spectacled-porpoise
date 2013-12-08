@@ -2,6 +2,8 @@
 precision mediump float;
 
 uniform sampler2D uParticlePositionData;
+uniform sampler2D uParticleVelocityData;
+uniform sampler2D uParticleDensityData;
 uniform float uGridSize;
 
 varying float vCoord;
@@ -15,5 +17,5 @@ vec2 getUVFromIndex(float particleNumber) {
 }
 
 void main(void) {
-    gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);//texture2D(uParticlePositionData, getUVFromIndex(vCoord));
+    gl_FragColor = texture2D(uParticleDensityData, getUVFromIndex(vCoord));
 }

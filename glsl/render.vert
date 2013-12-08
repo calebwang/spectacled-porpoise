@@ -6,6 +6,8 @@ attribute float aParticleIndex;
 uniform float uGridSize;
 
 uniform sampler2D uParticlePositionData;
+uniform sampler2D uParticleVelocityData;
+uniform sampler2D uParticleDensityData;
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 

@@ -7,6 +7,8 @@ var Simulation = function(gl, programs) {
     this.debug = false;
     this.auto = true;
     this.ssfr = true;
+    this.mass = 1.0;
+    this.searchRadius = 1.0;
 
     this.setPrograms();
 
@@ -57,6 +59,7 @@ Simulation.prototype.initShaders = function() {
     var physicsProgram = this.programs['physics'];
     var velocityProgram = this.programs['velocity'];
     var neighborProgram = this.programs['neighbor'];
+    var densityProgram = this.programs['density'];
 
     // Render program
     renderProgram.particleIndexAttribute = gl.getAttribLocation(renderProgram, "aParticleIndex");
@@ -69,6 +72,8 @@ Simulation.prototype.initShaders = function() {
     renderProgram.mvMatrixUniform = gl.getUniformLocation(renderProgram, "uMVMatrix");
 
     renderProgram.particlePositionDataLocation = gl.getUniformLocation(renderProgram, "uParticlePositionData");
+    renderProgram.particleVelocityDataLocation = gl.getUniformLocation(renderProgram, "uParticleVelocityData");
+    renderProgram.particleDensityDataLocation = gl.getUniformLocation(renderProgram, "uParticleDensityData");
 
     // ssfr depth program
     ssfrProgram.particleIndexAttribute = gl.getAttribLocation(ssfrProgram, "aParticleIndex");
@@ -102,14 +107,46 @@ Simulation.prototype.initShaders = function() {
     // Velocity program
     velocityProgram.particlePositionDataLocation = gl.getUniformLocation(velocityProgram, "uParticlePositionData");
     velocityProgram.particleVelocityDataLocation = gl.getUniformLocation(velocityProgram, "uParticleVelocityData");
+    velocityProgram.particleDensityDataLocation = gl.getUniformLocation(velocityProgram, "uParticleDensityData");
+    velocityProgram.particleNeighborDataLocation = gl.getUniformLocation(velocityProgram, "uParticleNeighborData");
+
+    //maximum search distance
+    velocityProgram.searchRadiusLocation = gl.getUniformLocation(velocityProgram, "uSearchRadius");
+
     velocityProgram.spaceSideLocation = gl.getUniformLocation(velocityProgram, "uSpaceSide");
     velocityProgram.viewportSizeLocation = gl.getUniformLocation(velocityProgram, "uViewportSize");
     velocityProgram.gridSizeLocation = gl.getUniformLocation(velocityProgram, "uGridSize");
+    velocityProgram.massLocation = gl.getUniformLocation(velocityProgram, "uMass");
 
     velocityProgram.vertexCoordAttribute = gl.getAttribLocation(velocityProgram, "aVertexCoord");
     console.log(velocityProgram.vertexCoordAttribute);
     velocityProgram.attributes.push(velocityProgram.vertexCoordAttribute);
     gl.enableVertexAttribArray(velocityProgram.vertexCoordAttribute);
+
+    // Density program
+    densityProgram.particlePositionDataLocation = gl.getUniformLocation(densityProgram, "uParticlePositionData");
+    densityProgram.particleVelocityDataLocation = gl.getUniformLocation(densityProgram, "uParticleVelocityData");
+    densityProgram.particleDensityDataLocation = gl.getUniformLocation(densityProgram, "uParticleDensityData");
+    densityProgram.particleNeighborDataLocation = gl.getUniformLocation(densityProgram, "uParticleNeighborData");
+    //maximum search distance
+    densityProgram.searchRadiusLocation = gl.getUniformLocation(densityProgram, "uSearchRadius");
+
+    densityProgram.spaceSideLocation = gl.getUniformLocation(densityProgram, "uSpaceSide");
+    densityProgram.viewportSizeLocation = gl.getUniformLocation(densityProgram, "uViewportSize");
+    densityProgram.gridSizeLocation = gl.getUniformLocation(densityProgram, "uGridSize");
+    densityProgram.massLocation = gl.getUniformLocation(densityProgram, "uMass");
+
+    densityProgram.vertexCoordAttribute = gl.getAttribLocation(densityProgram, "aVertexCoord");
+    console.log(densityProgram.vertexCoordAttribute);
+    densityProgram.attributes.push(densityProgram.vertexCoordAttribute);
+    gl.enableVertexAttribArray(densityProgram.vertexCoordAttribute);
+
+    densityProgram.u_ngridResolution = gl.getUniformLocation(densityProgram, "u_ngrid_resolution");
+    densityProgram.u_diameter = gl.getUniformLocation(densityProgram, "u_particleDiameter");
+    densityProgram.u_ngrid_L = gl.getUniformLocation(densityProgram, "u_ngrid_L");
+    densityProgram.u_ngrid_D = gl.getUniformLocation(densityProgram, "u_ngrid_D");
+    densityProgram.u_numParticles = gl.getUniformLocation(densityProgram, "u_numParticles");
+    densityProgram.u_particlePositions = gl.getUniformLocation(densityProgram, "u_particlePositions");
 
     // Neighbor program
     neighborProgram.particleIndex = gl.getAttribLocation(neighborProgram, "a_particleIndex");
@@ -145,6 +182,7 @@ Simulation.prototype.initParticles = function() {
     var ppd = this.particlePositionData = new Float32Array(n * 4);
     var pvd = this.particleVelocityData = new Float32Array(n * 4);
     var pid = this.particleIndexData = new Float32Array(n);
+    var pdd = this.particleDensityData = new Float32Array(n*4);
 
 
     // Initialize matrix values
@@ -163,10 +201,16 @@ Simulation.prototype.initParticles = function() {
         pvd[i + 1] = (Math.random() * 2 - 1) * 5;
         pvd[i + 2] = (Math.random() * 2 - 1) * 5;
         pvd[i + 3] = 1;
+
+        pdd[i] = 1.0;
+        pdd[i + 1] = 1.0;
+        pdd[i + 2] = 1.0;
+        pdd[i + 3] = 1.0;
     }
 
     console.log(this.particlePositionData);
     console.log(this.particleVelocityData);
+    console.log(this.particleDensityData);
     console.log(this.particleIndexData);
 };
 
@@ -176,6 +220,8 @@ Simulation.prototype.initTextures = function() {
     this.particlePositionTexture = ppt;
     var pvt = initTexture(gl, this.parGridSide, this.particleVelocityData);
     this.particleVelocityTexture = pvt;
+    var dt = initTexture(gl, this.parGridSide, this.particleDensityData);
+    this.densityTexture = dt;
     var nt = initTexture(gl, this.neighborGridSide, null);
     this.neighborTexture = nt;
 };
@@ -187,6 +233,8 @@ Simulation.prototype.initFramebuffers = function() {
     this.particlePositionFramebuffer = ppfb;
     var pvfb = initOutputFramebuffer(gl, this.parGridSide, this.particleVelocityTexture);
     this.particleVelocityFramebuffer = pvfb;
+    var pdfb = initOutputFramebuffer(gl, this.parGridSide, this.particleVelocityTexture);
+    this.particleDensityFramebuffer = pdfb;
     var nfb = initOutputFramebuffer(gl, this.neighborGridSide, this.neighborTexture);
     this.neighborFramebuffer = nfb;
 };
@@ -197,6 +245,7 @@ Simulation.prototype.initUniforms = function() {
     var renderProgram = this.renderProgram;
     var physicsProgram = this.physicsProgram;
     var velocityProgram = this.velocityProgram;
+    var densityProgram = this.densityProgram;
     var neighborProgram = this.neighborProgram;
     var s = this.parGridSide;
 
@@ -221,6 +270,26 @@ Simulation.prototype.initUniforms = function() {
     gl.useProgram(velocityProgram);
     gl.uniform2f(velocityProgram.viewportSizeLocation, s, s);
     gl.uniform1f(velocityProgram.gridSizeLocation, s);
+    gl.uniform1f(velocityProgram.massLocation, this.mass);
+    gl.uniform1f(velocityProgram.searchRadiusLocation, this.searchRadius);
+
+    // Initialize density program uniforms
+    gl.useProgram(densityProgram);
+    gl.uniform2f(densityProgram.viewportSizeLocation, s, s);
+    gl.uniform1f(densityProgram.gridSizeLocation, s);
+    gl.uniform1f(densityProgram.massLocation, this.mass);
+    gl.uniform1f(densityProgram.searchRadiusLocation, this.searchRadius);
+
+    // Initialize density program uniforms
+    gl.useProgram(densityProgram);
+    gl.uniform2f(densityProgram.u_parResolution, s, s);
+    gl.uniform2f(densityProgram.u_spaceResolution, this.spaceSide, this.spaceSide);
+    gl.uniform2f(densityProgram.u_ngridResolution, this.neighborGridSide, this.neighborGridSide);
+    gl.uniform1f(densityProgram.u_diameter, this.particleDiameter);
+    gl.uniform1f(densityProgram.u_ngrid_L, this.metagridUnit);
+    gl.uniform1f(densityProgram.u_ngrid_D, this.metagridSide);
+    gl.uniform1f(densityProgram.u_numParticles, this.numParticles);
+
 
     // Initialize neighbor program uniforms
     gl.useProgram(neighborProgram);
@@ -245,7 +314,7 @@ Simulation.prototype.setMatrixUniforms = function() {
 
 Simulation.prototype.updateVelocities = function() {
     var gl = this.gl;
-    console.log("updating velocities");
+    console.log("accelerating cows");
 
     var velocityProgram = this.velocityProgram;
     enableAttributes(gl, velocityProgram);
@@ -274,7 +343,7 @@ Simulation.prototype.updateVelocities = function() {
 
 Simulation.prototype.updatePositions = function() {
     var gl = this.gl;
-    console.log('updating scene');
+    console.log('shifting qubits');
 
     var physicsProgram = this.physicsProgram;
     enableAttributes(gl, physicsProgram);
@@ -299,12 +368,45 @@ Simulation.prototype.updatePositions = function() {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 };
 
+Simulation.prototype.updateDensities = function() {
+    var gl = this.gl;
+    console.log('computing hyper densities');
+
+    var densityProgram = this.densityProgram;
+    enableAttributes(gl, densityProgram);
+    gl.useProgram(densityProgram);
+
+    gl.uniform1i(densityProgram.particlePositionDataLocation, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
+
+    gl.uniform1i(densityProgram.uVelocityDataLocation, 1);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.particleVelocityTexture);
+
+    gl.uniform1i(densityProgram.uDensityDataLocation, 2);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, this.particleDensityTexture);
+
+    gl.uniform1i(densityProgram.uNeighborDataLocation, 3);
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, this.particleNeighborTexture);
+
+    gl.viewport(0, 0, this.parGridSide, this.parGridSide);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
+    gl.vertexAttribPointer(densityProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.densityBuffer);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
 Simulation.prototype.updateNeighbors = function() {
     var gl = this.gl;
     var s = this.neighborGridSide;
     var n = this.numParticles;
 
-    console.log('computing neighbors');
+    console.log('seeding meta neighbors');
     var neighborProgram = this.neighborProgram;
     enableAttributes(gl, neighborProgram);
     gl.useProgram(neighborProgram);
@@ -379,16 +481,23 @@ Simulation.prototype.drawScene = function() {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
 
+    gl.uniform1i(renderProgram.particleVelocityDataLocation, 1);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.particleVelocityTexture);
+
+    gl.uniform1i(renderProgram.particleDensityDataLocation, 2);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, this.particleDensityTexture);
+
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
-    mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
     console.log(this.rotationMatrix);
     console.log(this.pMatrix);
     mat4.identity(this.mvMatrix);
-    mat4.translate(this.mvMatrix, this.mvMatrix,[-this.spaceSide/2, -this.spaceSide/2, -3.0 * this.spaceSide]);
+    mat4.translate(this.mvMatrix, this.mvMatrix,[-this.spaceSide/2, -this.spaceSide/2, -5.0 * this.spaceSide]);
     mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
@@ -411,6 +520,7 @@ Simulation.prototype.setPrograms = function() {
     this.physicsProgram = this.programs['physics'];
     this.velocityProgram = this.programs['velocity'];
     this.neighborProgram = this.programs['neighbor'];
+    this.densityProgram = this.programs['density'];
 };
 
 Simulation.prototype.reset = function() {
