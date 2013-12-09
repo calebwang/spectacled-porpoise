@@ -7,19 +7,21 @@ var Simulation = function(gl, programs) {
     this.debug = false;
     this.auto = true;
     this.ssfr = true;
+    this.normal = false;
+    this.particleRadius = 0.1;
 
     this.setPrograms();
 
     this.numParticles = this.gridSize*this.gridSize;
     this.parGridSide = this.gridSize;
-    this.particleRadius = 0.01;
-    this.particleScale = 100;
-    this.clipNear = 5.0;
-    this.clipFar = -5.0;
+    this.particleScale = 100.0;
+    
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
     this.spaceSide = 4; // The length of a dimension in world space
+    this.clipNear = this.spaceSide*1.5;
+    this.clipFar = -this.spaceSide*3;
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
 
     // True length of a unit in metagrid space: the 'L' in the calculation
@@ -53,7 +55,11 @@ var Simulation = function(gl, programs) {
 Simulation.prototype.initShaders = function() {
     var gl = this.gl;
     var renderProgram = this.programs['render'];
-    var ssfrProgram = this.programs['ssfr-depth'];
+    if (this.normal) {
+        var ssfrProgram = this.programs['ssfr-normal'];
+    } else {
+        var ssfrProgram = this.programs['ssfr-depth'];
+    }
     var physicsProgram = this.programs['physics'];
     var velocityProgram = this.programs['velocity'];
     var neighborProgram = this.programs['neighbor'];
@@ -78,7 +84,7 @@ Simulation.prototype.initShaders = function() {
     ssfrProgram.gridSizeLocation = gl.getUniformLocation(ssfrProgram, "uGridSize");
 
     ssfrProgram.particleRadiusLocation = gl.getUniformLocation(ssfrProgram, "uParticleRadius");
-    ssfrProgram.particleScaleLocation = gl.getUniformLocation(ssfrProgram, "uScaleRadius");
+    ssfrProgram.particleScaleLocation = gl.getUniformLocation(ssfrProgram, "uParticleScale");
     ssfrProgram.nearLocation = gl.getUniformLocation(ssfrProgram, "near");
     ssfrProgram.farScaleLocation = gl.getUniformLocation(ssfrProgram, "far");
 
@@ -203,7 +209,7 @@ Simulation.prototype.initUniforms = function() {
     // Initialize render program uniforms
     gl.useProgram(renderProgram);
     gl.uniform1f(renderProgram.gridSizeLocation, s);
-    if (this.ssfr) {
+    if (this.ssfr || this.normal) {
         gl.uniform1f(renderProgram.particleRadiusLocation, this.particleRadius);
         gl.uniform1f(renderProgram.particleScaleLocation, this.particleScale);
         gl.uniform1f(renderProgram.nearLocation, this.clipNear);
@@ -383,7 +389,7 @@ Simulation.prototype.drawScene = function() {
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+    mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, this.clipNear, this.clipFar);
     mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
     console.log(this.rotationMatrix);
     console.log(this.pMatrix);
@@ -396,7 +402,7 @@ Simulation.prototype.drawScene = function() {
     gl.vertexAttribPointer(renderProgram.particleIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
     this.setMatrixUniforms();
-    gl.enable(gl.BLEND);
+    //gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
     gl.drawArrays(gl.POINTS, 0, this.numParticles);
     gl.disable(gl.BLEND);
@@ -405,6 +411,8 @@ Simulation.prototype.drawScene = function() {
 Simulation.prototype.setPrograms = function() {
     if (this.ssfr) {
         this.renderProgram = this.programs['ssfr-depth'];
+    } else if(this.normal) {
+        this.renderProgram = this.programs['ssfr-normal'];
     } else {
         this.renderProgram = this.programs['render'];
     }

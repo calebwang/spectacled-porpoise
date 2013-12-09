@@ -3,6 +3,7 @@ precision mediump float;
 uniform sampler2D uParticlePositionData;
 
 uniform float uParticleRadius;
+uniform float uParticleScale;
 uniform float near;
 uniform float far;
 
@@ -19,18 +20,15 @@ void main(void) {
     if (mag > 1.0) discard;
     norm.z = sqrt(1.0 - mag);
 
-    //vec4 spherePosEye = vec4(posEye + norm * uParticleRadius, 1.0);
-    //vec4 clipSpacePos = uPMatrix * spherePosEye;
-    //vec4 clipSpacePos = uPMatrix * vec4(norm, 1.0);
-    //float normDepth = clipSpacePos.z/clipSpacePos.w;
-    //float normDepth = gl_FragCoord.z;
-
-    //gl_FragDepth = (((far-near)/2.0)*normDepth) + ((far+near)/2.0);
+    float normDepth = gl_FragCoord.z;
     //float depth = (((far-near)/2.0)*normDepth) + ((far+near)/2.0);
+    float normMag = (norm.z*uParticleRadius)/uParticleScale + normDepth;
+
+    //float depth = (((far-near)/2.0)*normDepth) + ((far+near)/2.0);
+    //float depth = (normDepth - .) * 2.0;
     //gl_FragColor = vec4(depth, depth, depth, 1.0); 
-    gl_FragColor = vec4(norm, 1.0);
-    //gl_FragColor = vec4(clipSpacePos, clipSpacePos, clipSpacePos, 1.0); 
+    //gl_FragColor = vec4(norm, 1.0); 
     //gl_FragColor = vec4(norm.z, norm.z, norm.z, 1.0);
-    //gl_FragColor = vec4(particleDepth, particleDepth,particleDepth , 1.0);
+    gl_FragColor = vec4(normMag, normMag, normMag, 1.0);
     //gl_FragColor = vec4(gl_FragCoord.z, gl_FragCoord.z, gl_FragCoord.z, 1.0);
 }

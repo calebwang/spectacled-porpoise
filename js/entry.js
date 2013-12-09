@@ -145,8 +145,10 @@ var setupControls = function(simulator) {
     var controls = new DAT.GUI({autoPlace: false});
     controls.add(simulator, 'gridSize', 100, 1000);
     controls.add(simulator, 'viscosity', 0.005, 0.02);
+    controls.add(simulator, 'particleRadius', .01, 0.5);
     controls.add(simulator, 'debug');
     controls.add(simulator, 'ssfr');
+    controls.add(simulator, 'normal');
     controls.add(simulator, 'auto');
     controls.add(simulator, 'reset');
     var customContainer = document.getElementById("my-gui-container");
@@ -200,7 +202,7 @@ var setMouseHandlers = function(canvas, simulator) {
 $(document).ready(function() {
     var canvas = initCanvas();
     var gl = initGL(canvas);
-    var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth'];
+    var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'ssfr-normal'];
     var programs = new Programs(gl);
     programs.loadShaders(shaders, function() {
         var simulator = new Simulation(gl, programs);
@@ -217,6 +219,8 @@ $(document).ready(function() {
         var render = function() {
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LESS);
+
             console.log("rendering frame");
             if (simulator.auto) {
                 requestAnimFrame(render);
