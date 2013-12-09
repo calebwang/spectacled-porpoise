@@ -6,7 +6,7 @@ var Simulation = function(gl, programs) {
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
-    this.ssfr = true;
+    this.ssfr = false;
     this.mass = 1.0;
     this.searchRadius = 1.0;
 
@@ -202,10 +202,10 @@ Simulation.prototype.initParticles = function() {
         pvd[i + 2] = (Math.random() * 2 - 1) * 5;
         pvd[i + 3] = 1;
 
-        pdd[i] = 1.0;
-        pdd[i + 1] = 1.0;
-        pdd[i + 2] = 1.0;
-        pdd[i + 3] = 1.0;
+        pdd[i] = 1;
+        pdd[i + 1] = 1;
+        pdd[i + 2] = 1;
+        pdd[i + 3] = 1;
     }
 
     console.log(this.particlePositionData);
@@ -221,7 +221,7 @@ Simulation.prototype.initTextures = function() {
     var pvt = initTexture(gl, this.parGridSide, this.particleVelocityData);
     this.particleVelocityTexture = pvt;
     var dt = initTexture(gl, this.parGridSide, this.particleDensityData);
-    this.densityTexture = dt;
+    this.particleDensityTexture = dt;
     var nt = initTexture(gl, this.neighborGridSide, null);
     this.neighborTexture = nt;
 };
@@ -281,7 +281,6 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform1f(densityProgram.searchRadiusLocation, this.searchRadius);
 
     // Initialize density program uniforms
-    gl.useProgram(densityProgram);
     gl.uniform2f(densityProgram.u_parResolution, s, s);
     gl.uniform2f(densityProgram.u_spaceResolution, this.spaceSide, this.spaceSide);
     gl.uniform2f(densityProgram.u_ngridResolution, this.neighborGridSide, this.neighborGridSide);
