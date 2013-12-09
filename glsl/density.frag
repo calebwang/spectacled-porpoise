@@ -77,21 +77,29 @@ float densityKernel(vec3 distance) {
     float search = 1.0;
     float density = 0.0;
     //smoothing kernel
-    if (dist > 0.0 && dist <= search) {
+    if (dist >= 0.0 && dist <= search) {
         float diff = search*search - dist*dist;
         density = uMass * diff * diff * diff;
-    }
-    if (density < 0.0) {
-        return 0.0;
     }
     return density;
 }
 
+vec4 neighborhoodLocationFromVoxelIndex(vec2 voxel) {
+    voxel = voxel + 0.5;
+    vec2 zeroToOne = voxel / u_ngrid_resolution;
+    vec2 zeroToTwo = zeroToOne * 2.0;
+    vec2 clipSpace = zeroToTwo - vec2(1.0, 1.0);
+
+    float index = gl_FragCoord.x/uGridSize + gl_FragCoord.y;
+    // Give depth to the position
+    return vec4(clipSpace, index / (uGridSize*uGridSize), 1);
+}
+
 float computeDensityContribution(vec3 offset) {
-    offset = offset;
     float density = 0.0;
     vec3 pos = getPosition(gl_FragCoord.xy).rgb + offset;
     vec2 voxel = voxelIndex(pos);
+    vec2 voxel_xy = neighborhoodLocationFromVoxelIndex(voxel).xy;
     vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
     if (vertexIndices.r > 0.0) {
         density += densityKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.r)).rgb);

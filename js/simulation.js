@@ -19,7 +19,7 @@ var Simulation = function(gl, programs) {
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
-    this.spaceSide = 4; // The length of a dimension in world space
+    this.spaceSide = 36; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
 
     this.clipNear = 1;
@@ -99,10 +99,16 @@ Simulation.prototype.initShaders = function() {
     physicsProgram.gridSizeLocation = gl.getUniformLocation(physicsProgram, "uGridSize");
 
 
-    physicsProgram.vertexCoordAttribute = gl.getAttribLocation(physicsProgram, "aVertexCoord");
-    console.log(physicsProgram.vertexCoordAttribute);
-    physicsProgram.attributes.push(physicsProgram.vertexCoordAttribute);
-    gl.enableVertexAttribArray(physicsProgram.vertexCoordAttribute);
+    //physicsProgram.vertexCoordAttribute = gl.getAttribLocation(physicsProgram, "aVertexCoord");
+    //console.log(physicsProgram.vertexCoordAttribute);
+    //physicsProgram.attributes.push(physicsProgram.vertexCoordAttribute);
+    //gl.enableVertexAttribArray(physicsProgram.vertexCoordAttribute);
+
+    physicsProgram.vertexIndexAttribute = gl.getAttribLocation(physicsProgram, "aVertexIndex");
+    console.log('wat' + physicsProgram.vertexIndexAttribute);
+    physicsProgram.attributes.push(physicsProgram.vertexIndexAttribute);
+    gl.enableVertexAttribArray(physicsProgram.vertexIndexAttribute);
+    console.log('hi');
 
     // Velocity program
     velocityProgram.particlePositionDataLocation = gl.getUniformLocation(velocityProgram, "uParticlePositionData");
@@ -353,6 +359,7 @@ Simulation.prototype.updatePositions = function() {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
 
+
     // Set TEXTURE1 to the particle velocity texture
     gl.uniform1i(physicsProgram.particleVelocityDataLocation, 1);
     gl.activeTexture(gl.TEXTURE1);
@@ -360,11 +367,16 @@ Simulation.prototype.updatePositions = function() {
 
     gl.viewport(0, 0, this.parGridSide, this.parGridSide);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
-    gl.vertexAttribPointer(physicsProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+    //gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
+    //gl.vertexAttribPointer(physicsProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
+    gl.enableVertexAttribArray(physicsProgram.vertexIndexAttribute);
+    gl.vertexAttribPointer(physicsProgram.vertexIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particlePositionFramebuffer);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.drawArrays(gl.POINTS, 0, this.gridSize*this.gridSize);
+    //gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 };
 
 Simulation.prototype.updateDensities = function() {
@@ -494,7 +506,7 @@ Simulation.prototype.drawScene = function() {
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+    mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, 0.1, 1000.0);
     console.log(this.rotationMatrix);
     console.log(this.pMatrix);
     mat4.identity(this.mvMatrix);

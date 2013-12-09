@@ -122,7 +122,7 @@ Programs.prototype.addProgram = function(name, vs, fs) {
         // something went wrong with the link
         var error = gl.getProgramInfoLog(program);
         gl.deleteProgram(program);
-        throw "Error in program linking:" + lastError;
+        throw "Error in program linking:" + error;
     }
     program.attributes = [];
     this[name] = program;
@@ -225,7 +225,7 @@ $(document).ready(function() {
             simulator.updateNeighbors();
             simulator.updateDensities();
             simulator.updateVelocities();
-            //simulator.updatePositions();
+            simulator.updatePositions();
             simulator.drawScene();
         };
         render();
