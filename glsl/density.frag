@@ -73,17 +73,19 @@ vec2 voxelIndexFromParticleIndex(float index) {
 }
 
 float densityKernel(vec3 distance) {
-    float dist = length(distance);
+    float dist = length(distance)/uSearchRadius;
+    float search = 1.0;
     float density = 0.0;
     //smoothing kernel
     if (dist > 0.0 && dist < uSearchRadius) {
-        float diff = uSearchRadius*uSearchRadius - dist*dist;
+        float diff = search*search - dist*dist;
         density = uMass * diff * diff * diff;
     }
     return density;
 }
 
 float computeDensityContribution(vec3 offset) {
+    offset = offset;
     float density = 0.0;
     vec3 pos = getPosition(gl_FragCoord.xy).rgb + offset;
     vec2 voxel = voxelIndex(pos);
@@ -111,7 +113,36 @@ void main(void) {
     vec2 p = voxelIndex(particlePosition) + 0.5;
     //vec2 p = particlePosition.rg + 0.5;
 
-    float density = getDensity(gl_FragCoord.xy);
+    float density = computeDensityContribution(vec3(0.0, 0.0, 0.0));
+    density += computeDensityContribution(vec3(0.0, 0.0, 1.0));
+    density += computeDensityContribution(vec3(0.0, 1.0, 0.0));
+    density += computeDensityContribution(vec3(0.0, 1.0, 1.0));
+    density += computeDensityContribution(vec3(0.0, -1.0, 0.0));
+    density += computeDensityContribution(vec3(0.0, 0.0, -1.0));
+    density += computeDensityContribution(vec3(0.0, -1.0, -1.0));
+    density += computeDensityContribution(vec3(0.0, 1.0, -1.0));
+    density += computeDensityContribution(vec3(0.0, -1.0, 1.0));
 
-    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    density += computeDensityContribution(vec3(1.0, 0.0, 0.0));
+    density += computeDensityContribution(vec3(1.0, 0.0, 1.0));
+    density += computeDensityContribution(vec3(1.0, 1.0, 0.0));
+    density += computeDensityContribution(vec3(1.0, 1.0, 1.0));
+    density += computeDensityContribution(vec3(1.0, -1.0, 0.0));
+    density += computeDensityContribution(vec3(1.0, 0.0, -1.0));
+    density += computeDensityContribution(vec3(1.0, -1.0, -1.0));
+    density += computeDensityContribution(vec3(1.0, 1.0, -1.0));
+    density += computeDensityContribution(vec3(1.0, -1.0, 1.0));
+
+    density += computeDensityContribution(vec3(-1.0, 0.0, 0.0));
+    density += computeDensityContribution(vec3(-1.0, 0.0, 1.0));
+    density += computeDensityContribution(vec3(-1.0, 1.0, 0.0));
+    density += computeDensityContribution(vec3(-1.0, 1.0, 1.0));
+    density += computeDensityContribution(vec3(-1.0, -1.0, 0.0));
+    density += computeDensityContribution(vec3(-1.0, 0.0, -1.0));
+    density += computeDensityContribution(vec3(-1.0, -1.0, -1.0));
+    density += computeDensityContribution(vec3(-1.0, 1.0, -1.0));
+    density += computeDensityContribution(vec3(-1.0, -1.0, 1.0));
+
+    //density = getDensity(gl_FragCoord.xy);
+    gl_FragColor = vec4(density);
 }

@@ -2,7 +2,7 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 256;
+    this.gridSize = 64;
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
@@ -202,10 +202,10 @@ Simulation.prototype.initParticles = function() {
         pvd[i + 2] = (Math.random() * 2 - 1) * 5;
         pvd[i + 3] = 1;
 
-        pdd[i] = 1;
-        pdd[i + 1] = 1;
-        pdd[i + 2] = 1;
-        pdd[i + 3] = 1;
+        pdd[i] = 0.5;
+        pdd[i + 1] = 0.5;
+        pdd[i + 2] = 0.5;
+        pdd[i + 3] = 0.5;
     }
 
     console.log(this.particlePositionData);
@@ -233,7 +233,7 @@ Simulation.prototype.initFramebuffers = function() {
     this.particlePositionFramebuffer = ppfb;
     var pvfb = initOutputFramebuffer(gl, this.parGridSide, this.particleVelocityTexture);
     this.particleVelocityFramebuffer = pvfb;
-    var pdfb = initOutputFramebuffer(gl, this.parGridSide, this.particleVelocityTexture);
+    var pdfb = initOutputFramebuffer(gl, this.parGridSide, this.particleDensityTexture);
     this.particleDensityFramebuffer = pdfb;
     var nfb = initOutputFramebuffer(gl, this.neighborGridSide, this.neighborTexture);
     this.neighborFramebuffer = nfb;
@@ -379,12 +379,13 @@ Simulation.prototype.updateDensities = function() {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
 
-    gl.uniform1i(densityProgram.uVelocityDataLocation, 1);
+    gl.uniform1i(densityProgram.particleVelocityDataLocation, 1);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.particleVelocityTexture);
 
-    gl.uniform1i(densityProgram.uDensityDataLocation, 2);
+    gl.uniform1i(densityProgram.particleDensityDataLocation, 2);
     gl.activeTexture(gl.TEXTURE2);
+    console.log(this.particleDensityTexture);
     gl.bindTexture(gl.TEXTURE_2D, this.particleDensityTexture);
 
     gl.uniform1i(densityProgram.uNeighborDataLocation, 3);
@@ -396,7 +397,8 @@ Simulation.prototype.updateDensities = function() {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
     gl.vertexAttribPointer(densityProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.densityBuffer);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.particleDensityFramebuffer);
+    console.log(this.particleDensityFramebuffer);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
