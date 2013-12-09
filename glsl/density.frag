@@ -41,9 +41,9 @@ float getDensity(vec2 xy) {
 
 vec2 textureCoord(float index) {
     vec2 coord;
-    coord.x = mod(index, u_partex_resolution.x);
-    coord.y = floor(index / u_partex_resolution.x);
-    return (coord + 0.5) / u_partex_resolution;
+    coord.x = mod(index, uGridSize);
+    coord.y = floor(index / uGridSize);
+    return (coord + 0.5) / uGridSize;
 }
 
 
@@ -77,9 +77,12 @@ float densityKernel(vec3 distance) {
     float search = 1.0;
     float density = 0.0;
     //smoothing kernel
-    if (dist > 0.0 && dist < uSearchRadius) {
+    if (dist > 0.0 && dist <= search) {
         float diff = search*search - dist*dist;
         density = uMass * diff * diff * diff;
+    }
+    if (density < 0.0) {
+        return 0.0;
     }
     return density;
 }

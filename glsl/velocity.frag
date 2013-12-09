@@ -46,7 +46,7 @@ void main(void) {
         vel.x = -vel.x * 0.8;
     }
     if (pos.y < 0.0) {
-        vel.y = -vel.y * 0.8 + 9.8 * 0.01;
+        vel.y = 9.8 * 0.01;
     }
     if (pos.z < 0.0) {
         vel.z = -vel.z * 0.8;

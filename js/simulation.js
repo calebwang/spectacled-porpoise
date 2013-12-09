@@ -2,11 +2,11 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 64;
+    this.gridSize = 256;
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
-    this.ssfr = false;
+    this.ssfr = true;
     this.mass = 1.0;
     this.searchRadius = 1.0;
 
@@ -16,14 +16,14 @@ var Simulation = function(gl, programs) {
     this.parGridSide = this.gridSize;
     this.particleRadius = 0.01;
     this.particleScale = 100;
-    this.clipNear = 5.0;
-    this.clipFar = -5.0;
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
     this.spaceSide = 4; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
 
+    this.clipNear = 1;
+    this.clipFar = 1000;
     // True length of a unit in metagrid space: the 'L' in the calculation
     this.metagridUnit = this.spaceSide/this.particleDiameter;
     // Length of side of metagrid in voxel space: the 'D' in the calculation
@@ -202,10 +202,10 @@ Simulation.prototype.initParticles = function() {
         pvd[i + 2] = (Math.random() * 2 - 1) * 5;
         pvd[i + 3] = 1;
 
-        pdd[i] = 0.5;
-        pdd[i + 1] = 0.5;
-        pdd[i + 2] = 0.5;
-        pdd[i + 3] = 0.5;
+        pdd[i] = 1.0;
+        pdd[i + 1] = 1.0;
+        pdd[i + 2] = 1.0;
+        pdd[i + 3] = 1.0;
     }
 
     console.log(this.particlePositionData);

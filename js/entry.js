@@ -225,7 +225,7 @@ $(document).ready(function() {
             simulator.updateNeighbors();
             simulator.updateDensities();
             simulator.updateVelocities();
-            simulator.updatePositions();
+            //simulator.updatePositions();
             simulator.drawScene();
         };
         render();
