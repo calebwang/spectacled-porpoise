@@ -7,7 +7,9 @@ uniform sampler2D uParticleVelocityData;
 uniform vec2 uViewportSize;
 uniform float uGridSize;
 
-vec2 getUVFromIndex(float particleNumber) {
+varying float vIndex;
+
+vec2 textureCoord(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
     uv.x = interval * (mod(particleNumber, uGridSize) + 0.5);
@@ -16,15 +18,18 @@ vec2 getUVFromIndex(float particleNumber) {
 }
 
 vec4 getPosition() {
-    return texture2D(uParticlePositionData, gl_FragCoord.xy/uViewportSize);
+    return texture2D(uParticlePositionData, textureCoord(vIndex));
 }
 
 vec4 getVelocity() {
-    return texture2D(uParticleVelocityData, gl_FragCoord.xy/uViewportSize);
+    return texture2D(uParticleVelocityData, textureCoord(vIndex));
 }
 
 void main(void) {
     vec3 pos = getPosition().xyz;
     vec3 dir = getVelocity().xyz;
+    if (pos.y < 1.0) {
+        pos.y = 1.0;
+    }
     gl_FragColor = vec4(pos, 1.0) + 0.01*vec4(dir, 1.0);
 }
