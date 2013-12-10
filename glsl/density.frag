@@ -69,11 +69,6 @@ vec2 voxelIndex(vec3 pos) {
     return n_pos;
 }
 
-vec2 voxelIndexFromParticleIndex(float index) {
-    vec3 pos = getPosition(textureCoord(index)).rgb;
-    return voxelIndex(pos) + 0.5;
-}
-
 float densityKernel(vec3 distance) {
     float dist = length(distance);
     float density = 0.0;
