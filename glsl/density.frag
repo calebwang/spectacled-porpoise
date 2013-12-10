@@ -3,23 +3,20 @@ precision mediump float;
 precision mediump int;
 
 uniform sampler2D uParticlePositionData;
-uniform sampler2D uParticleVelocityData;
-uniform sampler2D uParticleDensityData;
 uniform sampler2D uParticleNeighborData;
 
 uniform float uMass;
 uniform float uKernelConstant;
 
-uniform vec2 uViewportSize;
 uniform float uGridSize;
 uniform float uSearchRadius;
 uniform float u_particleDiameter;
-uniform vec2 u_partex_resolution;
-uniform vec2 u_space_resolution;
+uniform vec3 u_space_resolution;
 uniform vec2 u_ngrid_resolution;
 uniform float u_ngrid_L;
 uniform float u_ngrid_D;
-uniform float uSpaceSide;
+
+varying vec2 vTexCoord;
 
 vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
@@ -29,16 +26,8 @@ vec2 getUVFromIndex(float particleNumber) {
     return uv;
 }
 
-vec4 getPosition(vec2 xy) {
-    return texture2D(uParticlePositionData, xy/uViewportSize);
-}
-
-vec4 getVelocity(vec2 xy) {
-    return texture2D(uParticleVelocityData, xy/uViewportSize);
-}
-
-float getDensity(vec2 xy) {
-    return texture2D(uParticleVelocityData, xy/uViewportSize).r;
+vec4 getPosition(vec2 texCoord) {
+    return texture2D(uParticlePositionData, texCoord);
 }
 
 vec2 textureCoord(float index) {
@@ -89,7 +78,7 @@ float densityKernel(vec3 distance) {
 
 float computeDensityContribution(vec3 offset) {
     float density = 0.0;
-    vec3 pos = getPosition(gl_FragCoord.xy).rgb + offset/uSpaceSide;
+    vec3 pos = getPosition(vTexCoord).xyz + offset/u_space_resolution;
     if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
         if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
             vec2 voxel = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
@@ -118,7 +107,7 @@ float computeDensityContribution(vec3 offset) {
 void main(void) {
     // Get the 3D particle position corrresponding to the particle index
     // by transforming from 1D to 2D buffer indices
-    vec3 particlePosition = getPosition(gl_FragCoord.xy).rgb;
+    vec3 particlePosition = getPosition(vTexCoord).xyz;
     // // Save the voxel position into gl_Position
     vec2 p = voxelIndex(particlePosition) + 0.5;
     //vec2 p = particlePosition.rg + 0.5;
@@ -154,6 +143,5 @@ void main(void) {
     density += computeDensityContribution(vec3(-1.0, 1.0, -1.0));
     density += computeDensityContribution(vec3(-1.0, -1.0, 1.0));
 
-    //density = getDensity(gl_FragCoord.xy);
     gl_FragColor = vec4(density);
 }

@@ -6,24 +6,18 @@ uniform sampler2D uParticlePositionData;
 uniform sampler2D uParticleVelocityData;
 uniform sampler2D uParticleDensityData;
 uniform sampler2D uParticleNeighborData;
-uniform float uMass;
-uniform float uSearchRadius;
 
+uniform float uMass;
 uniform float uPressureConstant;
 
-uniform vec2 u_partex_resolution;
-uniform vec2 u_space_resolution;
-uniform vec2 u_ngrid_resolution;
-
+uniform float uGridSize;
+uniform float uSearchRadius;
 uniform float u_particleDiameter;
-
+uniform vec3 u_space_resolution;
+uniform vec2 u_ngrid_resolution;
 uniform float u_ngrid_L;
 uniform float u_ngrid_D;
 
-uniform float u_numParticles;
-
-uniform float uGridSize;
-uniform float uSpaceSide;
 
 varying vec2 vTexCoord;
 varying float vVertexIndex;
@@ -94,7 +88,7 @@ vec3 computeForce(float index) {
 
 vec3 computeForceContribution(vec3 offset) {
     vec3 force = vec3(0.0, 0.0, 0.0);
-    vec3 pos = getPosition(vTexCoord).rgb + offset/uSpaceSide;
+    vec3 pos = getPosition(vTexCoord).rgb + offset/u_space_resolution;
 
     if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
         if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
@@ -154,7 +148,7 @@ void main(void) {
     force += computeForceContribution(vec3(-1.0, 1.0, -1.0));
     force += computeForceContribution(vec3(-1.0, -1.0, 1.0));
 
-    vel += 0.005*(force/9.23);
+    vel += 0.0000005*(force/9.23);
 
     vec3 newPos = pos + 0.00005 * vel;
 
