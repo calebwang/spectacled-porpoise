@@ -219,7 +219,6 @@ Simulation.prototype.initBuffers = function() {
 
 Simulation.prototype.initParticles = function() {
     var l = this.spaceSide;
-    l = 1;
     var n = this.numParticles;
 
     var ppd = this.particlePositionData = new Float32Array(n * 4);
@@ -240,8 +239,8 @@ Simulation.prototype.initParticles = function() {
 
     for (i = 0; i < (n*4); i += 4) {
         ppd[i] = random();
-        ppd[i + 1] = random() * l;
-        ppd[i + 2] = random() * l;
+        ppd[i + 1] = random();
+        ppd[i + 2] = random();
         ppd[i + 3] = 1;
 
         pvd[i] = (random() * 2 - 1);
@@ -445,7 +444,7 @@ Simulation.prototype.updatePositions = function() {
     gl.vertexAttribPointer(physicsProgram.vertexIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particlePositionFramebuffer);
-    gl.drawArrays(gl.POINTS, 0, this.gridSize*this.gridSize);
+    gl.drawArrays(gl.POINTS, 0, this.parGridSide*this.parGridSide);
     //gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 };
 
@@ -468,8 +467,6 @@ Simulation.prototype.updateDensities = function() {
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, this.particleDensityTexture);
 
-    console.log(densityProgram.particleNeighborDataLocation);
-    console.log(this.neighborTexture);
     gl.uniform1i(densityProgram.particleNeighborDataLocation, 3);
     gl.activeTexture(gl.TEXTURE3);
     gl.bindTexture(gl.TEXTURE_2D, this.neighborTexture);
@@ -481,7 +478,7 @@ Simulation.prototype.updateDensities = function() {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particleDensityFramebuffer);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-}
+};
 
 Simulation.prototype.updateNeighbors = function() {
     var gl = this.gl;
@@ -579,8 +576,6 @@ Simulation.prototype.drawScene = function() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, 0.1, 1000.0);
-    console.log(this.rotationMatrix);
-    console.log(this.pMatrix);
     mat4.identity(this.mvMatrix);
     mat4.translate(this.mvMatrix, this.mvMatrix,[0, 0, -5.0]);
     mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);

@@ -19,7 +19,7 @@ uniform vec2 u_space_resolution;
 uniform vec2 u_ngrid_resolution;
 uniform float u_ngrid_L;
 uniform float u_ngrid_D;
-uniform float uSpaceSide; 
+uniform float uSpaceSide;
 
 vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;

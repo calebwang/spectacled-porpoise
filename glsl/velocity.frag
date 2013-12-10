@@ -24,7 +24,7 @@ uniform float u_numParticles;
 
 uniform vec2 uViewportSize;
 uniform float uGridSize;
-uniform float uSpaceSide; 
+uniform float uSpaceSide;
 
 vec2 textureCoord(float particleNumber) {
     float interval = 1.0/uGridSize;
@@ -74,7 +74,7 @@ vec3 pressureKernel(vec3 pos, float index) {
     float d = length(dist);
 
     if (d > 0.0 && d < uSearchRadius) {
-        float x = uSearchRadius - d; 
+        float x = uSearchRadius - d;
         result = (getDensity(gl_FragCoord.xy/uViewportSize).r/998.23 - 1.0)*uMass*uPressureConstant*x*x*x*normalize(dist)/density;
     }
     return result;
