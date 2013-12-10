@@ -2,7 +2,7 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 16;
+    this.gridSize = 256;
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
@@ -17,9 +17,9 @@ var Simulation = function(gl, programs) {
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
-    this.spaceSide = 16; // The length of a dimension in world space
+    this.spaceSide = 36; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
-    this.searchRadius = 1.0;
+    this.searchRadius = 1.0/this.spaceSide;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = 15.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
@@ -249,10 +249,10 @@ Simulation.prototype.initParticles = function() {
         pvd[i + 2] = (random() * 2 - 1);
         pvd[i + 3] = 1;
 
-        pdd[i] = 1.0;
-        pdd[i + 1] = 1.0;
-        pdd[i + 2] = 1.0;
-        pdd[i + 3] = 1.0;
+        pdd[i] = 0.0;
+        pdd[i + 1] = 0.0;
+        pdd[i + 2] = 0.0;
+        pdd[i + 3] = 0.0;
     }
 
     console.log(this.particlePositionData);
@@ -397,6 +397,15 @@ Simulation.prototype.updateVelocities = function() {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.particleVelocityTexture);
 
+    gl.uniform1i(velocityProgram.particleDensityDataLocation, 2);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, this.particleDensityTexture);
+
+    gl.uniform1i(velocityProgram.particleNeighborDataLocation, 3);
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, this.neighborTexture);
+
+
     gl.uniform1f(velocityProgram.spaceSideLocation, this.spaceSide);
 
     gl.viewport(0, 0, this.parGridSide, this.parGridSide);
@@ -457,12 +466,13 @@ Simulation.prototype.updateDensities = function() {
 
     gl.uniform1i(densityProgram.particleDensityDataLocation, 2);
     gl.activeTexture(gl.TEXTURE2);
-    console.log(this.particleDensityTexture);
     gl.bindTexture(gl.TEXTURE_2D, this.particleDensityTexture);
 
+    console.log(densityProgram.particleNeighborDataLocation);
+    console.log(this.neighborTexture);
     gl.uniform1i(densityProgram.particleNeighborDataLocation, 3);
     gl.activeTexture(gl.TEXTURE3);
-    gl.bindTexture(gl.TEXTURE_2D, this.particleNeighborTexture);
+    gl.bindTexture(gl.TEXTURE_2D, this.neighborTexture);
 
     gl.viewport(0, 0, this.parGridSide, this.parGridSide);
 
@@ -488,7 +498,7 @@ Simulation.prototype.updateNeighbors = function() {
     gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
 
     // We'll be doing this computation in four passes
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.neighborsBuffer);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.neighborFramebuffer);
     gl.viewport(0, 0, s, s);
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -562,7 +572,7 @@ Simulation.prototype.drawScene = function() {
 
     gl.uniform1i(renderProgram.neighborDataLocation, 3);
     gl.activeTexture(gl.TEXTURE3);
-    gl.bindTexture(gl.TEXTURE_2D, this.particleNeighborTexture);
+    gl.bindTexture(gl.TEXTURE_2D, this.neighborTexture);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
