@@ -98,8 +98,8 @@ vec3 computeForce(float index) {
 
 
     vec3 vel = getVelocity(textureCoord(index)).rgb - getVelocity(gl_FragCoord.xy/uViewportSize).rgb;
-    //force1 += vel*uMass*viscosityKernel(dist)/myDensity;
-    return force1/150.0;
+    force1 += vel*uMass*viscosityKernel(dist)/myDensity;
+    return force1/998.23;
 }
 
 vec3 computeForceContribution(vec3 offset) {
@@ -164,26 +164,21 @@ void main(void) {
     force3 += computeForceContribution(vec3(-1.0, 1.0, -1.0));
     force3 += computeForceContribution(vec3(-1.0, -1.0, 1.0));
 
-    vel += 0.005*(force3);
 
-    if (pos.x > 1.0) {
-        vel.x = -abs(vel.x) * 0.2;
+    vec3 center = vec3(0.5);
+    vec3 local = pos - center;
+    vec3 box = vec3(0.48);
+    vec3 contactLocal = min(box, max(-box, local));
+
+    float cDist = length(contactLocal + center - pos);
+    
+    if (cDist > 0.0 && length(vel) > 0.0) {
+        vec3 normal = normalize(sign(contactLocal - local));
+        float rest = cDist/(0.01 * length(vel));
+        vel -= (1.0 + rest) * dot(vel, normal) * normal;
     }
-    if (pos.y > 1.0) {
-        vel.y = -abs(vel.y) * 0.2;
-    }
-    if (pos.z > 1.0) {
-        vel.z = -abs(vel.z) * 0.2;
-    }
-    if (pos.x < 0.0) {
-        vel.x = abs(vel.x) * 0.2;
-    }
-    if (pos.y < 0.0) {
-        vel.y = 9.8*0.01;
-    }
-    if (pos.z < 0.0) {
-        vel.z = abs(vel.z) * 0.2;
-    }
+
+    vel += 0.005*(force3);
 
     vel += 0.005*vec3(0.0, -9.8, 0.0);
 
