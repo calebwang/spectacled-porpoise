@@ -19,7 +19,7 @@ var Simulation = function(gl, programs) {
     // In each direction
     this.spaceSide = 36; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
-    this.searchRadius = 1.0/this.spaceSide;
+    this.searchRadius = 0.045;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = 15.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
@@ -27,7 +27,7 @@ var Simulation = function(gl, programs) {
     console.log(this.wPressureConstant);
 
     this.restDensity = 998.23;
-    this.mass = 0.02;
+    this.mass = this.restDensity/this.numParticles;
 
     this.clipNear = 1;
     this.clipFar = 1000;
@@ -240,13 +240,13 @@ Simulation.prototype.initParticles = function() {
 
     for (i = 0; i < (n*4); i += 4) {
         ppd[i] = random();
-        ppd[i + 1] = random() * l;
+        ppd[i + 1] = random() * l/2.0;
         ppd[i + 2] = random() * l;
         ppd[i + 3] = 1;
 
-        pvd[i] = (random() * 2 - 1);
-        pvd[i + 1] = (random() * 2 - 1);
-        pvd[i + 2] = (random() * 2 - 1);
+        pvd[i] = 0.0;//(random() * 2 - 1);
+        pvd[i + 1] = 0;//(random() * 2 - 1);
+        pvd[i + 2] = 0;// (random() * 2 - 1);
         pvd[i + 3] = 1;
 
         pdd[i] = 0.0;
@@ -582,7 +582,7 @@ Simulation.prototype.drawScene = function() {
     console.log(this.rotationMatrix);
     console.log(this.pMatrix);
     mat4.identity(this.mvMatrix);
-    mat4.translate(this.mvMatrix, this.mvMatrix,[0, 0, -5.0]);
+    mat4.translate(this.mvMatrix, this.mvMatrix,[-0.5, -0.5, -3.0]);
     mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
