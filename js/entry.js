@@ -92,6 +92,7 @@ Programs.prototype.loadShaders = function(shaders, ready) {
     var self = this;
     for (var i = 0; i < shaders.length; i += 1) {
         var shader = shaders[i];
+        console.log(shader);
         var location = "glsl/" + shader;
         getRequests.push($.get(location + ".vert"), $.get(location + ".frag"));
     }

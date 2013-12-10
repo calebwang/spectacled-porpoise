@@ -6,7 +6,7 @@ var Simulation = function(gl, programs) {
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
-    this.ssfr = true;
+    this.ssfr = false;
     this.normal = false;
     this.particleRadius = 1;
     this.mass = 1.0;
@@ -502,11 +502,12 @@ Simulation.prototype.updateNeighbors = function() {
 };
 
 Simulation.prototype.renderSurface = function() {
+    console.log("rendering surface");
     var gl = this.gl;
 
     var surfaceDepthProgram = this.surfaceDepthProgram;
     var surfaceNormalProgram = this.surfaceNormalProgram;
-    enableAttributes(gl, surfaceDepthProgram);
+    //enableAttributes(gl, surfaceDepthProgram);
     gl.useProgram(surfaceDepthProgram);
 
     // Set TEXTURE0 to the particle position texture
@@ -550,7 +551,9 @@ Simulation.prototype.renderSurface = function() {
 
 Simulation.prototype.drawScene = function() {
     var gl = this.gl;
-    console.log('rendering scene');
+    console.log('rendering scene ahahahahaha');
+    console.log(this.renderProgram);
+    console.log(this.programs);
 
     var renderProgram = this.renderProgram;
     enableAttributes(gl, renderProgram);
