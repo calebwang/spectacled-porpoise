@@ -234,7 +234,12 @@ $(document).ready(function() {
             simulator.updateDensities();
             simulator.updateVelocities();
             simulator.updatePositions();
-            simulator.drawScene();
+            //simulator.drawScene();
+            if(simulator.ssfr) {
+                simulator.renderSurface();
+            } else {
+                simulator.drawScene();
+            }
         };
         render();
     });

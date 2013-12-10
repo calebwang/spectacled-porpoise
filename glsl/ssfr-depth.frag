@@ -1,3 +1,4 @@
+#extension GL_EXT_frag_depth: enable
 precision mediump float;
 
 uniform sampler2D uParticlePositionData;
@@ -31,17 +32,9 @@ void main(void) {
     gl_FragColor = vec4(diffuse*kd.r, diffuse*kd.g, diffuse*kd.b, 1.0);*/
 
     vec4 spherePosEye = vec4(posEye + (norm * uParticleRadius) / uParticleScale, 1.0);
-    vec4 clipSpacePos = uPMatrix * spherePosEye;
+    vec4 clipSpacePos = uPMatrix  * spherePosEye;
 
     float normDepth = clipSpacePos.z/clipSpacePos.w + .5;
 
-    //float depth = (((far-near)/2.0)*normDepth) + ((far+near)/2.0);
-
-    //vec4 normPos = clipSpacePos / clipSpacePos.w;
-    //gl_FragColor = vec4((clipSpacePos.x/clipSpacePos.w) + .5, (clipSpacePos.y/clipSpacePos.w) + .5, clipSpacePos.z/clipSpacePos.w +.5, 1.0);
     gl_FragColor = vec4(normDepth, normDepth, normDepth, 1.0);
-    //gl_FragColor = vec4(gl_FragCoord.x/(gl_FragCoord.w * , gl_FragCoord.y/gl_FragCoord.w, gl_FragCoord.z/gl_FragCoord.w, 1.0);
-    //gl_FragColor = vec4(gl_FragCoord.w, gl_FragCoord.w, gl_FragCoord.w, 1.0);
-    //gl_FragColor = vec4(test, test, test, 1.0);
-
 }
