@@ -12,7 +12,6 @@ uniform float uPressureConstant;
 
 uniform float uGridSize;
 uniform float uSearchRadius;
-uniform float u_particleDiameter;
 uniform vec3 u_space_resolution;
 uniform vec2 u_ngrid_resolution;
 uniform float u_ngrid_L;
@@ -46,7 +45,7 @@ vec2 voxelIndex(vec3 pos) {
     // Assumiing smallest voxel coordinate is (0, 0, 0)
     // Find the correct 3D bucket pos belongs into based off the grid side
     // length u_particleDiameter
-    vec3 g = floor(pos*u_ngrid_L / u_particleDiameter);
+    vec3 g = floor(pos*u_ngrid_L);
 
     // Determining which slice the 3D bucket belongs to if a 2D metagraph
     // is constructed from slices of the 3D space

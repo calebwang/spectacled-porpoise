@@ -10,7 +10,6 @@ uniform float uKernelConstant;
 
 uniform float uGridSize;
 uniform float uSearchRadius;
-uniform float u_particleDiameter;
 uniform vec3 u_space_resolution;
 uniform vec2 u_ngrid_resolution;
 uniform float u_ngrid_L;

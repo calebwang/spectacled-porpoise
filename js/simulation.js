@@ -83,7 +83,6 @@ Simulation.prototype.initShaders = function() {
     renderProgram.neighborDataLocation = gl.getUniformLocation(renderProgram, "uParticleNeighborData");
 
     renderProgram.u_ngridResolution = gl.getUniformLocation(renderProgram, "u_ngrid_resolution");
-    renderProgram.u_diameter = gl.getUniformLocation(renderProgram, "u_particleDiameter");
     renderProgram.u_ngrid_L = gl.getUniformLocation(renderProgram, "u_ngrid_L");
     renderProgram.u_ngrid_D = gl.getUniformLocation(renderProgram, "u_ngrid_D");
     renderProgram.u_numParticles = gl.getUniformLocation(renderProgram, "u_numParticles");
@@ -109,7 +108,6 @@ Simulation.prototype.initShaders = function() {
     ssfrProgram.particlePositionDataLocation = gl.getUniformLocation(ssfrProgram, "uParticlePositionData");
 
     ssfrProgram.u_ngridResolution = gl.getUniformLocation(ssfrProgram, "u_ngrid_resolution");
-    ssfrProgram.u_diameter = gl.getUniformLocation(ssfrProgram, "u_particleDiameter");
     ssfrProgram.u_ngrid_L = gl.getUniformLocation(ssfrProgram, "u_ngrid_L");
     ssfrProgram.u_ngrid_D = gl.getUniformLocation(ssfrProgram, "u_ngrid_D");
     ssfrProgram.u_numParticles = gl.getUniformLocation(ssfrProgram, "u_numParticles");
@@ -144,7 +142,6 @@ Simulation.prototype.initShaders = function() {
     gl.enableVertexAttribArray(velocityProgram.vertexIndexAttribute);
 
     velocityProgram.u_ngridResolution = gl.getUniformLocation(velocityProgram, "u_ngrid_resolution");
-    velocityProgram.u_diameter = gl.getUniformLocation(velocityProgram, "u_particleDiameter");
     velocityProgram.u_ngrid_L = gl.getUniformLocation(velocityProgram, "u_ngrid_L");
     velocityProgram.u_ngrid_D = gl.getUniformLocation(velocityProgram, "u_ngrid_D");
     velocityProgram.u_numParticles = gl.getUniformLocation(velocityProgram, "u_numParticles");
@@ -167,7 +164,6 @@ Simulation.prototype.initShaders = function() {
     gl.enableVertexAttribArray(densityProgram.vertexIndexAttribute);
 
     densityProgram.u_ngridResolution = gl.getUniformLocation(densityProgram, "u_ngrid_resolution");
-    densityProgram.u_diameter = gl.getUniformLocation(densityProgram, "u_particleDiameter");
     densityProgram.u_ngrid_L = gl.getUniformLocation(densityProgram, "u_ngrid_L");
     densityProgram.u_ngrid_D = gl.getUniformLocation(densityProgram, "u_ngrid_D");
 
@@ -182,7 +178,6 @@ Simulation.prototype.initShaders = function() {
     neighborProgram.u_spaceResolution = gl.getUniformLocation(neighborProgram, "u_space_resolution");
     // Resolution of the world space
     neighborProgram.u_ngridResolution = gl.getUniformLocation(neighborProgram, "u_ngrid_resolution");
-    neighborProgram.u_diameter = gl.getUniformLocation(neighborProgram, "u_particleDiameter");
     neighborProgram.u_ngrid_L = gl.getUniformLocation(neighborProgram, "u_ngrid_L");
     neighborProgram.u_ngrid_D = gl.getUniformLocation(neighborProgram, "u_ngrid_D");
     neighborProgram.u_numParticles = gl.getUniformLocation(neighborProgram, "u_numParticles");
@@ -290,7 +285,6 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform2f(renderProgram.u_parResolution, s, s);
     gl.uniform2f(renderProgram.u_spaceResolution, this.spaceSide, this.spaceSide);
     gl.uniform2f(renderProgram.u_ngridResolution, this.neighborGridSide, this.neighborGridSide);
-    gl.uniform1f(renderProgram.u_diameter, this.particleDiameter);
     gl.uniform1f(renderProgram.u_ngrid_L, this.metagridUnit);
     gl.uniform1f(renderProgram.u_ngrid_D, this.metagridSide);
     gl.uniform1f(renderProgram.u_numParticles, this.numParticles);
@@ -310,7 +304,6 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform1f(velocityProgram.searchRadiusLocation, this.searchRadius);
     gl.uniform3f(velocityProgram.u_spaceResolution, l, l, l);
     gl.uniform2f(velocityProgram.u_ngridResolution, ld, ld);
-    gl.uniform1f(velocityProgram.u_diameter, this.particleDiameter);
     gl.uniform1f(velocityProgram.u_ngrid_L, this.metagridUnit);
     gl.uniform1f(velocityProgram.u_ngrid_D, this.metagridSide);
 
@@ -323,7 +316,6 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform1f(densityProgram.searchRadiusLocation, this.searchRadius);
     gl.uniform3f(densityProgram.u_spaceResolution, l, l, l);
     gl.uniform2f(densityProgram.u_ngridResolution, ld, ld);
-    gl.uniform1f(densityProgram.u_diameter, this.particleDiameter);
     gl.uniform1f(densityProgram.u_ngrid_L, this.metagridUnit);
     gl.uniform1f(densityProgram.u_ngrid_D, this.metagridSide);
 
@@ -333,7 +325,6 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform2f(neighborProgram.u_parResolution, s, s);
     gl.uniform2f(neighborProgram.u_spaceResolution, this.spaceSide, this.spaceSide);
     gl.uniform2f(neighborProgram.u_ngridResolution, this.neighborGridSide, this.neighborGridSide);
-    gl.uniform1f(neighborProgram.u_diameter, this.particleDiameter);
     gl.uniform1f(neighborProgram.u_ngrid_L, this.metagridUnit);
     gl.uniform1f(neighborProgram.u_ngrid_D, this.metagridSide);
     gl.uniform1f(neighborProgram.u_numParticles, this.numParticles);
