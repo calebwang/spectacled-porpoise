@@ -8,7 +8,7 @@ var Simulation = function(gl, programs) {
     this.auto = true;
     this.ssfr = true;
     this.mass = 1.0;
-    this.searchRadius = 1.0;
+    this.searchRadius = 2.0;
 
     this.setPrograms();
 
@@ -19,7 +19,7 @@ var Simulation = function(gl, programs) {
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
-    this.spaceSide = 36; // The length of a dimension in world space
+    this.spaceSide = 25; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
 
     this.clipNear = 1;
@@ -147,6 +147,8 @@ Simulation.prototype.initShaders = function() {
     densityProgram.attributes.push(densityProgram.vertexCoordAttribute);
     gl.enableVertexAttribArray(densityProgram.vertexCoordAttribute);
 
+    velocityProgram.spaceSideLocation = gl.getUniformLocation(velocityProgram, "uSpaceSide");
+
     densityProgram.u_ngridResolution = gl.getUniformLocation(densityProgram, "u_ngrid_resolution");
     densityProgram.u_diameter = gl.getUniformLocation(densityProgram, "u_particleDiameter");
     densityProgram.u_ngrid_L = gl.getUniformLocation(densityProgram, "u_ngrid_L");
@@ -254,6 +256,7 @@ Simulation.prototype.initUniforms = function() {
     var densityProgram = this.densityProgram;
     var neighborProgram = this.neighborProgram;
     var s = this.parGridSide;
+    var l = this.spaceSide;
 
     // Initialize render program uniforms
     gl.useProgram(renderProgram);
@@ -281,6 +284,7 @@ Simulation.prototype.initUniforms = function() {
 
     // Initialize density program uniforms
     gl.useProgram(densityProgram);
+    gl.uniform1f(densityProgram.spaceSideLocation, l);
     gl.uniform2f(densityProgram.viewportSizeLocation, s, s);
     gl.uniform1f(densityProgram.gridSizeLocation, s);
     gl.uniform1f(densityProgram.massLocation, this.mass);
@@ -410,7 +414,6 @@ Simulation.prototype.updateDensities = function() {
     gl.vertexAttribPointer(densityProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particleDensityFramebuffer);
-    console.log(this.particleDensityFramebuffer);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
@@ -477,6 +480,7 @@ Simulation.prototype.updateNeighbors = function() {
     // Clean up
     gl.colorMask(true, true, true, true);
     gl.disable(gl.STENCIL_TEST);
+    gl.disable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 };
