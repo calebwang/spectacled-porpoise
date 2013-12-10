@@ -123,7 +123,6 @@ void main(void) {
     vec3 pos = getPosition(vTexCoord).xyz;
     float density = getDensity(vTexCoord).x;
 
-    // Force due to pressure can be calcuated as
     vec3 force = vec3(0.0, 0.0, 0.0);
     force += computeForceContribution(vec3(0.0, 0.0, 0.0));
     force += computeForceContribution(vec3(0.0, 0.0, 1.0));
@@ -178,7 +177,7 @@ void main(void) {
         vel.z = abs(vel.z) * 0.2;
     }
 
-    vel += 0.004*vec3(0.0, -9.8, 0.0);
+    vel += vec3(0.0, -9.8, 0.0);
 
     gl_FragColor = vec4(vel, 1.0);
 }
