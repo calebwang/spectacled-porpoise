@@ -285,7 +285,7 @@ Simulation.prototype.initUniforms = function() {
 
      // Initialize surface depth program uniforms
     gl.useProgram(surfaceDepthProgram);
-    //gl.uniform1f(surfaceDepthProgram.gridSizeLocation, s);
+    gl.uniform1f(surfaceDepthProgram.gridSizeLocation, s);
     gl.uniform1f(surfaceDepthProgram.particleRadiusLocation, this.particleRadius);
     gl.uniform1f(surfaceDepthProgram.particleScaleLocation, this.particleScale);
     gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
@@ -605,12 +605,7 @@ Simulation.prototype.drawScene = function() {
 };
 
 Simulation.prototype.setPrograms = function() {
-    if (this.ssfr) {
-        this.renderProgram = this.programs['ssfr-depth'];
-    } else {
-        this.renderProgram = this.programs['render'];
-    }
-    
+    this.renderProgram = this.programs['render'];
     this.surfaceDepthProgram = this.programs['ssfr-depth'];
     this.surfaceNormalProgram = this.programs['ssfr-normal'];
     this.physicsProgram = this.programs['physics'];
