@@ -8,7 +8,7 @@ var Simulation = function(gl, programs) {
     this.auto = true;
     this.ssfr = true;
     this.mass = 1.0;
-    this.searchRadius = 2.0;
+    this.searchRadius = 100.0;
 
     this.setPrograms();
 
@@ -522,10 +522,12 @@ Simulation.prototype.drawScene = function() {
     gl.vertexAttribPointer(renderProgram.particleIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
     this.setMatrixUniforms();
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+    gl.enable(gl.DEPTH_TEST);
+    //gl.enable(gl.BLEND);
+    //gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
     gl.drawArrays(gl.POINTS, 0, this.numParticles);
-    gl.disable(gl.BLEND);
+    gl.disable(gl.DEPTH_TESET);
+    //gl.disable(gl.BLEND);
 };
 
 Simulation.prototype.setPrograms = function() {

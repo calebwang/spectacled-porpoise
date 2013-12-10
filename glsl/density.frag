@@ -78,7 +78,7 @@ float densityKernel(vec3 distance) {
     float search = 1.0;
     float density = 0.0;
     //smoothing kernel
-    if (dist >= 0.0 && dist < search) {
+    if (dist < search) {
         float diff = search*search - dist*dist;
         density = uMass * diff * diff * diff;
     }
@@ -100,7 +100,7 @@ float computeDensityContribution(vec3 offset) {
     vec3 pos = getPosition(gl_FragCoord.xy).rgb + offset;
     if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
         if (pos.x <= uSpaceSide && pos.y <= uSpaceSide && pos.z <= uSpaceSide) {
-            vec2 voxel = voxelIndex(pos)/u_ngrid_resolution;
+            vec2 voxel = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
             vec2 voxel_xy = neighborhoodLocationFromVoxelIndex(voxel);
             vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
 
