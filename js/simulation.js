@@ -8,7 +8,7 @@ var Simulation = function(gl, programs) {
     this.auto = true;
     this.ssfr = true;
     this.normal = false;
-    this.particleRadius = 0.1;
+    this.particleRadius = 1;
     this.mass = 1.0;
     this.searchRadius = 1.0;
 
@@ -40,6 +40,8 @@ var Simulation = function(gl, programs) {
     mat4.identity(pMatrix);
     var rotationMatrix = this.rotationMatrix = mat4.create();
     mat4.identity(rotationMatrix);
+    //set up a nicer default view
+    mat4.rotateY(rotationMatrix, rotationMatrix, Math.PI/4); 
 
     // Create quad vertices
     var viewportQuadVertices = new Float32Array([

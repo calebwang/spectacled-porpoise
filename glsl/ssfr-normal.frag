@@ -20,14 +20,19 @@ void main(void) {
     if (mag > 1.0) discard;
     norm.z = sqrt(1.0 - mag);
 
-    float normDepth = gl_FragCoord.z;
+    vec4 spherePosEye = vec4(posEye + norm * uParticleRadius, 1.0);
+    vec4 clipSpacePos = uPMatrix * spherePosEye;
+
+    float normDepth = clipSpacePos.z/clipSpacePos.w;
+
+    //float normDepth = gl_FragCoord.z;
     //float depth = (((far-near)/2.0)*normDepth) + ((far+near)/2.0);
     float normMag = (norm.z*uParticleRadius)/uParticleScale + normDepth;
 
     //float depth = (((far-near)/2.0)*normDepth) + ((far+near)/2.0);
     //float depth = (normDepth - .) * 2.0;
     //gl_FragColor = vec4(depth, depth, depth, 1.0); 
-    gl_FragColor = vec4(norm, 1.0); 
-    //gl_FragColor = vec4(norm.z, norm.z, norm.z, 1.0);
+    //gl_FragColor = vec4(norm, 1.0); 
+    gl_FragColor = vec4(normDepth, normDepth, normDepth, 1.0);
     //gl_FragColor = vec4(gl_FragCoord.z, gl_FragCoord.z, gl_FragCoord.z, 1.0);
 }
