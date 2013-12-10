@@ -18,5 +18,5 @@ vec2 getUVFromIndex(float particleNumber) {
 }
 
 void main(void) {
-    gl_FragColor = texture2D(uParticleDensityData, getUVFromIndex(vCoord))/100000.0;
+    gl_FragColor = texture2D(uParticleDensityData, getUVFromIndex(vCoord))/10000.0;
 }

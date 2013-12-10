@@ -19,7 +19,7 @@ var Simulation = function(gl, programs) {
     // In each direction
     this.spaceSide = 36; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
-    this.searchRadius = 0.045;
+    this.searchRadius = 0.07;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = 15.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
@@ -27,7 +27,9 @@ var Simulation = function(gl, programs) {
     console.log(this.wPressureConstant);
 
     this.restDensity = 998.23;
-    this.mass = this.restDensity/this.numParticles;
+    this.mass = this.restDensity/(this.spaceSide*this.spaceSide*this.spaceSide);
+
+    console.log(this.mass);
 
     this.clipNear = 1;
     this.clipFar = 1000;

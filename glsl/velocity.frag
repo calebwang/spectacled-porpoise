@@ -83,13 +83,13 @@ vec3 computeForce(float index) {
     float myDensity = getDensity(gl_FragCoord.xy).r;
     float density = getDensity(textureCoord(index)).r;
     float c = 3.0*(density - 998.23) + 3.0*(myDensity - 998.23);
-    vec3 force = c*uMass*pressureKernel(dist)/998.23;
+    vec3 force1 = c*uMass*pressureKernel(dist)/998.23;
 
-    return force/100.0;
+    return force1/100.0;
 }
 
 vec3 computeForceContribution(vec3 offset) {
-    vec3 force = vec3(0.0, 0.0, 0.0);
+    vec3 force2 = vec3(0.0, 0.0, 0.0);
     vec3 pos = getPosition(gl_FragCoord.xy/uViewportSize).rgb + offset/uSpaceSide;
 
     if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
@@ -98,20 +98,20 @@ vec3 computeForceContribution(vec3 offset) {
             vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
 
             if (vertexIndices.r > 0.0) {
-                force += computeForce(vertexIndices.r);
+                force2 += computeForce(vertexIndices.r);
             }
             if (vertexIndices.g > 0.0) {
-                force += computeForce(vertexIndices.g);
+                force2 += computeForce(vertexIndices.g);
             }
             if (vertexIndices.b > 0.0) {
-                force += computeForce(vertexIndices.b);
+                force2 += computeForce(vertexIndices.b);
             }
             if (vertexIndices.a > 0.0) {
-                force += computeForce(vertexIndices.a);
+                force2 += computeForce(vertexIndices.a);
             }
         }
     }
-    return force;
+    return force2;
 }
 
 void main(void) {
@@ -119,38 +119,38 @@ void main(void) {
     vec3 pos = getPosition(gl_FragCoord.xy/uViewportSize).xyz;
     float density = getDensity(gl_FragCoord.xy/uViewportSize).x;
 
-    vec3 force = vec3(0.0, 0.0, 0.0);
-    force += computeForceContribution(vec3(0.0, 0.0, 0.0));
-    force += computeForceContribution(vec3(0.0, 0.0, 1.0));
-    force += computeForceContribution(vec3(0.0, 1.0, 0.0));
-    force += computeForceContribution(vec3(0.0, 1.0, 1.0));
-    force += computeForceContribution(vec3(0.0, -1.0, 0.0));
-    force += computeForceContribution(vec3(0.0, 0.0, -1.0));
-    force += computeForceContribution(vec3(0.0, -1.0, -1.0));
-    force += computeForceContribution(vec3(0.0, 1.0, -1.0));
-    force += computeForceContribution(vec3(0.0, -1.0, 1.0));
+    vec3 force3 = vec3(0.0, 0.0, 0.0);
+    force3 += computeForceContribution(vec3(0.0, 0.0, 0.0));
+    force3 += computeForceContribution(vec3(0.0, 0.0, 1.0));
+    force3 += computeForceContribution(vec3(0.0, 1.0, 0.0));
+    force3 += computeForceContribution(vec3(0.0, 1.0, 1.0));
+    force3 += computeForceContribution(vec3(0.0, -1.0, 0.0));
+    force3 += computeForceContribution(vec3(0.0, 0.0, -1.0));
+    force3 += computeForceContribution(vec3(0.0, -1.0, -1.0));
+    force3 += computeForceContribution(vec3(0.0, 1.0, -1.0));
+    force3 += computeForceContribution(vec3(0.0, -1.0, 1.0));
 
-    force += computeForceContribution(vec3(1.0, 0.0, 0.0));
-    force += computeForceContribution(vec3(1.0, 0.0, 1.0));
-    force += computeForceContribution(vec3(1.0, 1.0, 0.0));
-    force += computeForceContribution(vec3(1.0, 1.0, 1.0));
-    force += computeForceContribution(vec3(1.0, -1.0, 0.0));
-    force += computeForceContribution(vec3(1.0, 0.0, -1.0));
-    force += computeForceContribution(vec3(1.0, -1.0, -1.0));
-    force += computeForceContribution(vec3(1.0, 1.0, -1.0));
-    force += computeForceContribution(vec3(1.0, -1.0, 1.0));
+    force3 += computeForceContribution(vec3(1.0, 0.0, 0.0));
+    force3 += computeForceContribution(vec3(1.0, 0.0, 1.0));
+    force3 += computeForceContribution(vec3(1.0, 1.0, 0.0));
+    force3 += computeForceContribution(vec3(1.0, 1.0, 1.0));
+    force3 += computeForceContribution(vec3(1.0, -1.0, 0.0));
+    force3 += computeForceContribution(vec3(1.0, 0.0, -1.0));
+    force3 += computeForceContribution(vec3(1.0, -1.0, -1.0));
+    force3 += computeForceContribution(vec3(1.0, 1.0, -1.0));
+    force3 += computeForceContribution(vec3(1.0, -1.0, 1.0));
 
-    force += computeForceContribution(vec3(-1.0, 0.0, 0.0));
-    force += computeForceContribution(vec3(-1.0, 0.0, 1.0));
-    force += computeForceContribution(vec3(-1.0, 1.0, 0.0));
-    force += computeForceContribution(vec3(-1.0, 1.0, 1.0));
-    force += computeForceContribution(vec3(-1.0, -1.0, 0.0));
-    force += computeForceContribution(vec3(-1.0, 0.0, -1.0));
-    force += computeForceContribution(vec3(-1.0, -1.0, -1.0));
-    force += computeForceContribution(vec3(-1.0, 1.0, -1.0));
-    force += computeForceContribution(vec3(-1.0, -1.0, 1.0));
+    force3 += computeForceContribution(vec3(-1.0, 0.0, 0.0));
+    force3 += computeForceContribution(vec3(-1.0, 0.0, 1.0));
+    force3 += computeForceContribution(vec3(-1.0, 1.0, 0.0));
+    force3 += computeForceContribution(vec3(-1.0, 1.0, 1.0));
+    force3 += computeForceContribution(vec3(-1.0, -1.0, 0.0));
+    force3 += computeForceContribution(vec3(-1.0, 0.0, -1.0));
+    force3 += computeForceContribution(vec3(-1.0, -1.0, -1.0));
+    force3 += computeForceContribution(vec3(-1.0, 1.0, -1.0));
+    force3 += computeForceContribution(vec3(-1.0, -1.0, 1.0));
 
-    vel += 0.005*(force/9.23);
+    vel += 0.005*(force3/9.23);
 
     if (pos.x > 1.0) {
         vel.x = -abs(vel.x) * 0.2;
