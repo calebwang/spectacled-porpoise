@@ -2,7 +2,7 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 16;
+    this.gridSize = 64;
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
@@ -15,11 +15,10 @@ var Simulation = function(gl, programs) {
     this.particleRadius = 0.01;
     this.particleScale = 100;
 
-    // Assuming uniform grid where there is an equal number of elements
-    // In each direction
-    this.spaceSide = 36; // The length of a dimension in world space
-    this.particleDiameter = 1; // The diameter of a particle / side length of voxel
-    this.searchRadius = 0.045;
+    // All values in this block assume units in coordinate space
+    // between (0, 0, 0) and (l, l, l), where l = this.spaceSide
+    this.spaceSide = 64; // The length of a dimension in particle diameters
+    this.searchRadius = 2;
     this.densityKernelConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = -45.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
@@ -27,12 +26,12 @@ var Simulation = function(gl, programs) {
     console.log(this.wPressureConstant);
 
     this.restDensity = 998.23;
-    this.mass = this.restDensity/this.numParticles;
+    this.mass = this.restDensity;
 
     this.clipNear = 1;
     this.clipFar = 1000;
     // True length of a unit in metagrid space: the 'L' in the calculation
-    this.metagridUnit = this.spaceSide/this.particleDiameter;
+    this.metagridUnit = this.spaceSide;
     // Length of side of metagrid in voxel space: the 'D' in the calculation
     this.metagridSide = Math.sqrt(this.metagridUnit);
     console.log(this.metagridUnit);

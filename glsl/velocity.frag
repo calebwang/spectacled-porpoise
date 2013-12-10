@@ -64,31 +64,34 @@ vec2 voxelIndex(vec3 pos) {
 
 vec3 pressureKernel(vec3 dist) {
     vec3 result = vec3(0.0, 0.0, 0.0);
-    float d = length(dist);
+    float d = length(dist) * u_ngrid_L;
 
-    if (d > 0.0 && d < uSearchRadius) {
+    if (d < uSearchRadius) {
         float x = uSearchRadius - d;
         result = uPressureConstant*x*x*normalize(dist);
     }
     return result;
 }
 
+float pressure(float density) {
+    return 3.0 * (density - uMass);
+}
+
 vec3 computeForce(float index) {
-    if (vTexCoord == index) {
+    if (vVertexIndex == index) {
         return vec3(0.0);
     }
-    vec3 dist = getPosition(textureCoord(index)).rgb - getPosition(vTexCoord).rgb;
-    float myDensity = getDensity(vTexCoord).r;
-    float density = getDensity(textureCoord(index)).r;
-    float c = 3.0*(density - 998.23) + 3.0*(myDensity - 998.23);
-    vec3 force = c*uMass*pressureKernel(dist)/998.23;
-
-    return force/100.0;
+    vec3 dist = getPosition(textureCoord(index)).xyz - getPosition(vTexCoord).xyz;
+    float myDensity = getDensity(vTexCoord).x;
+    float density = getDensity(textureCoord(index)).x;
+    float avg_pressure = (pressure(density) + pressure(myDensity)) / 2.0;
+    vec3 force = pressureKernel(dist) * avg_pressure * uMass / density;
+    return force;
 }
 
 vec3 computeForceContribution(vec3 offset) {
     vec3 force = vec3(0.0, 0.0, 0.0);
-    vec3 pos = getPosition(vTexCoord).rgb + offset/u_space_resolution;
+    vec3 pos = getPosition(vTexCoord).xyz + offset/u_space_resolution;
 
     if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
         if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
@@ -148,9 +151,14 @@ void main(void) {
     force += computeForceContribution(vec3(-1.0, 1.0, -1.0));
     force += computeForceContribution(vec3(-1.0, -1.0, 1.0));
 
-    vel += 0.0000005*(force/9.23);
+    // Negative force because of equation
+    force = -force;
 
-    vec3 newPos = pos + 0.00005 * vel;
+    // Using leapfrog integration scheme
+    // a = f_i / d_i, where f is force and d is density
+    vel += force/density;
+
+    vec3 newPos = pos + vel;
 
     if (newPos.x > 1.0) {
         vel.x = -abs(vel.x) * 0.2;
@@ -165,13 +173,12 @@ void main(void) {
         vel.x = abs(vel.x) * 0.2;
     }
     if (newPos.y < 0.0) {
-        vel.y = abs(vel.y) * 0.2;//9.8*0.01;
+        vel.y = abs(vel.y) * 0.2;
     }
     if (newPos.z < 0.0) {
         vel.z = abs(vel.z) * 0.2;
     }
-
-    vel += vec3(0.0, -9.8, 0.0);
+    vel += 0.00005 * vec3(0.0, -9.8, 0.0);
 
     gl_FragColor = vec4(vel, 1.0);
 }

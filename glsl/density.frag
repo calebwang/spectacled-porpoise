@@ -63,14 +63,14 @@ vec2 voxelIndexFromParticleIndex(float index) {
     return voxelIndex(pos) + 0.5;
 }
 
-float densityKernel(vec3 distance) {
-    float dist = length(distance);
+float densityKernel(vec3 dist) {
+    float d = length(dist) * u_ngrid_L;
     float density = 0.0;
     float search = uSearchRadius;
     //smoothing kernel
-    if (dist < search) {
-        float diff = search*search - dist*dist;
-        density = uKernelConstant * uMass * diff * diff * diff;
+    if (d < search) {
+        float diff = search*search - d*d;
+        density = uKernelConstant * uMass * d * d * d;
     }
     return density;
 }
