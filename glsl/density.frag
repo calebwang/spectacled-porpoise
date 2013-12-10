@@ -98,9 +98,9 @@ vec2 neighborhoodLocationFromVoxelIndex(vec2 voxel) {
 
 float computeDensityContribution(vec3 offset) {
     float density = 0.0;
-    vec3 pos = getPosition(gl_FragCoord.xy).rgb + offset;
+    vec3 pos = getPosition(gl_FragCoord.xy).rgb + offset/uSpaceSide;
     if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
-        if (pos.x <= uSpaceSide && pos.y <= uSpaceSide && pos.z <= uSpaceSide) {
+        if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
             vec2 voxel = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
             vec2 voxel_xy = neighborhoodLocationFromVoxelIndex(voxel);
             vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);

@@ -66,36 +66,40 @@ vec2 voxelIndex(vec3 pos) {
     return n_pos;
 }
 
-vec3 pressureKernel(vec3 dist) {
+vec3 pressureKernel(vec3 dist, float density) {
     vec3 result = vec3(0.0, 0.0, 0.0);
     float d = length(dist);
     if (d > 0.0 && d < uSearchRadius) {
         float x = uSearchRadius - d; 
-        result = uMass*uPressureConstant*x*x*x*normalize(dist);
+        result = (getDensity(gl_FragCoord.xy).r-998.23 + density - 998.23)*uMass*uPressureConstant*x*x*x*normalize(dist)/998.23;
     }
     return result;
 }
 
 vec3 computeForceContribution(vec3 offset) {
     vec3 force = vec3(0.0, 0.0, 0.0);
-    vec3 pos = getPosition(gl_FragCoord.xy/uViewportSize).rgb + offset;
+    vec3 pos = getPosition(gl_FragCoord.xy/uViewportSize).rgb + offset/uSpaceSide;
 
     if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
-        if (pos.x <= uSpaceSide && pos.y <= uSpaceSide && pos.z <= uSpaceSide) {
+        if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
             vec2 voxel = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
             vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
 
             if (vertexIndices.r > 0.0) {
-                force += pressureKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.r)).rgb);
+                float density = texture2D(uParticleDensityData, textureCoord(vertexIndices.r)).r;
+                force += pressureKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.r)).rgb, density);
             }
             if (vertexIndices.g > 0.0) {
-                force += pressureKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.g)).rgb);
+                float density = texture2D(uParticleDensityData, textureCoord(vertexIndices.g)).r;
+                force += pressureKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.g)).rgb, density);
             }
             if (vertexIndices.b > 0.0) {
-                force += pressureKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.b)).rgb);
+                float density = texture2D(uParticleDensityData, textureCoord(vertexIndices.b)).r;
+                force += pressureKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.b)).rgb, density);
             }
             if (vertexIndices.a > 0.0) {
-                force += pressureKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.a)).rgb);
+                float density = texture2D(uParticleDensityData, textureCoord(vertexIndices.a)).r;
+                force += pressureKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.a)).rgb, density);
             }
         }
     }
@@ -138,28 +142,28 @@ void main(void) {
     force += computeForceContribution(vec3(-1.0, 1.0, -1.0));
     force += computeForceContribution(vec3(-1.0, -1.0, 1.0));
 
-    vel += 0.01*(force/density);
+    vel += 0.005*(force/density);
 
-    if (pos.x > uSpaceSide) {
+    if (pos.x > 1.0) {
         vel.x = -abs(vel.x) * 0.8;
     }
-    if (pos.y > uSpaceSide) {
+    if (pos.y > 1.0) {
         vel.y = -abs(vel.y) * 0.8;
     }
-    if (pos.z > uSpaceSide) {
+    if (pos.z > 1.0) {
         vel.z = -abs(vel.z) * 0.8;
     }
     if (pos.x < 0.0) {
         vel.x = abs(vel.x) * 0.8;
     }
     if (pos.y < 0.0) {
-        vel.y = 0.0;
+        vel.y = 9.8*0.01;
     }
     if (pos.z < 0.0) {
         vel.z = abs(vel.z) * 0.8;
     }
 
-    vel += 0.01*vec3(0.0, -9.8, 0.0);
+    vel += 0.005*vec3(0.0, -9.8, 0.0);
 
     gl_FragColor = vec4(vel, 1.0);
 }

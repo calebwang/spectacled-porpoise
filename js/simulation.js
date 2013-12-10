@@ -2,7 +2,7 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 128;
+    this.gridSize = 256;
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
@@ -17,9 +17,9 @@ var Simulation = function(gl, programs) {
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
-    this.spaceSide = 16; // The length of a dimension in world space
+    this.spaceSide = 36; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
-    this.searchRadius = 1;
+    this.searchRadius = 1.0;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = 15.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
@@ -27,7 +27,7 @@ var Simulation = function(gl, programs) {
     console.log(this.wPressureConstant);
 
     this.restDensity = 998.23;
-    this.mass = this.restDensity;
+    this.mass = 0.02;
 
     this.clipNear = 1;
     this.clipFar = 1000;
@@ -201,6 +201,7 @@ Simulation.prototype.initBuffers = function() {
 
 Simulation.prototype.initParticles = function() {
     var l = this.spaceSide;
+    l = 1;
     var n = this.numParticles;
 
     var ppd = this.particlePositionData = new Float32Array(n * 4);
@@ -225,9 +226,9 @@ Simulation.prototype.initParticles = function() {
         ppd[i + 2] = random() * l;
         ppd[i + 3] = 1;
 
-        pvd[i] = (random() * 2 - 1) * 5;
-        pvd[i + 1] = (random() * 2 - 1) * 5;
-        pvd[i + 2] = (random() * 2 - 1) * 5;
+        pvd[i] = (random() * 2 - 1);
+        pvd[i + 1] = (random() * 2 - 1);
+        pvd[i + 2] = (random() * 2 - 1);
         pvd[i + 3] = 1;
 
         pdd[i] = 1.0;
@@ -541,7 +542,7 @@ Simulation.prototype.drawScene = function() {
     console.log(this.rotationMatrix);
     console.log(this.pMatrix);
     mat4.identity(this.mvMatrix);
-    mat4.translate(this.mvMatrix, this.mvMatrix,[-this.spaceSide/2, -this.spaceSide/2, -5.0 * this.spaceSide]);
+    mat4.translate(this.mvMatrix, this.mvMatrix,[0, 0, -5.0]);
     mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
