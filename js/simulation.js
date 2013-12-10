@@ -86,7 +86,6 @@ Simulation.prototype.initShaders = function() {
     gl.enableVertexAttribArray(surfaceDepthProgram.particleIndexAttribute);
 
     surfaceDepthProgram.gridSizeLocation = gl.getUniformLocation(surfaceDepthProgram, "uGridSize");
-<<<<<<< HEAD
 
     surfaceDepthProgram.particleRadiusLocation = gl.getUniformLocation(surfaceDepthProgram, "uParticleRadius");
     surfaceDepthProgram.particleScaleLocation = gl.getUniformLocation(surfaceDepthProgram, "uParticleScale");
@@ -98,20 +97,6 @@ Simulation.prototype.initShaders = function() {
 
     //ssfr normal program
     surfaceNormalProgram.surfaceDepthLocation = gl.getUniformLocation(surfaceNormalProgram, "uSurfaceDepthData");
-=======
-
-    surfaceDepthProgram.particleRadiusLocation = gl.getUniformLocation(surfaceDepthProgram, "uParticleRadius");
-    surfaceDepthProgram.particleScaleLocation = gl.getUniformLocation(surfaceDepthProgram, "uParticleScale");
-
-    surfaceDepthProgram.pMatrixUniform = gl.getUniformLocation(surfaceDepthProgram, "uPMatrix");
-    surfaceDepthProgram.mvMatrixUniform = gl.getUniformLocation(surfaceDepthProgram, "uMVMatrix");
-
-    surfaceDepthProgram.particlePositionDataLocation = gl.getUniformLocation(surfaceDepthProgram, "uParticlePositionData");
-
-    // ssfr normal program
-    surfaceNormalProgram.surfaceDepthLocation = gl.getUniformLocation(surfaceNormalProgram, "uSurfaceDepthData");
-
->>>>>>> 68456bc3ce4b24e4b4a95a20180178b4a6ad60cd
     surfaceNormalProgram.vertexCoordAttribute = gl.getAttribLocation(surfaceNormalProgram, "aVertexCoord");
     console.log(surfaceNormalProgram.vertexCoordAttribute);
     surfaceNormalProgram.attributes.push(surfaceNormalProgram.vertexCoordAttribute);
@@ -250,12 +235,7 @@ Simulation.prototype.initTextures = function() {
     var nt = initTexture(gl, this.neighborGridSide, null);
     this.neighborTexture = nt;
 
-<<<<<<< HEAD
-
    //initialize Surface rendering textures
-=======
-    //initialize Surface rendering textures
->>>>>>> 68456bc3ce4b24e4b4a95a20180178b4a6ad60cd
     var depthTexture = new Float32Array(window.innerWidth * window.innerHeight * 4);
     var sdt = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, sdt);
