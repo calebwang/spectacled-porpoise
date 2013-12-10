@@ -2,7 +2,7 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 256;
+    this.gridSize = 16;
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
@@ -20,10 +20,10 @@ var Simulation = function(gl, programs) {
     this.spaceSide = 36; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
     this.searchRadius = 0.045;
-    this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
-    this.wPressureConstant = 15.0/(Math.PI*Math.pow(this.searchRadius, 6));
+    this.densityKernelConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
+    this.wPressureConstant = -45.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
-    console.log(this.weightConstant);
+    console.log(this.densityKernelConstant);
     console.log(this.wPressureConstant);
 
     this.restDensity = 998.23;
@@ -120,7 +120,6 @@ Simulation.prototype.initShaders = function() {
     // Physics program
     physicsProgram.particlePositionDataLocation = gl.getUniformLocation(physicsProgram, "uParticlePositionData");
     physicsProgram.particleVelocityDataLocation = gl.getUniformLocation(physicsProgram, "uParticleVelocityData");
-    physicsProgram.viewportSizeLocation = gl.getUniformLocation(physicsProgram, "uViewportSize");
     physicsProgram.gridSizeLocation = gl.getUniformLocation(physicsProgram, "uGridSize");
 
 
@@ -130,7 +129,6 @@ Simulation.prototype.initShaders = function() {
     //gl.enableVertexAttribArray(physicsProgram.vertexCoordAttribute);
 
     physicsProgram.vertexIndexAttribute = gl.getAttribLocation(physicsProgram, "aVertexIndex");
-    console.log('wat' + physicsProgram.vertexIndexAttribute);
     physicsProgram.attributes.push(physicsProgram.vertexIndexAttribute);
     gl.enableVertexAttribArray(physicsProgram.vertexIndexAttribute);
 
@@ -145,14 +143,12 @@ Simulation.prototype.initShaders = function() {
     velocityProgram.wPressureConstLocation = gl.getUniformLocation(velocityProgram, "uPressureConstant");
 
     velocityProgram.spaceSideLocation = gl.getUniformLocation(velocityProgram, "uSpaceSide");
-    velocityProgram.viewportSizeLocation = gl.getUniformLocation(velocityProgram, "uViewportSize");
     velocityProgram.gridSizeLocation = gl.getUniformLocation(velocityProgram, "uGridSize");
     velocityProgram.massLocation = gl.getUniformLocation(velocityProgram, "uMass");
 
-    velocityProgram.vertexCoordAttribute = gl.getAttribLocation(velocityProgram, "aVertexCoord");
-    console.log(velocityProgram.vertexCoordAttribute);
-    velocityProgram.attributes.push(velocityProgram.vertexCoordAttribute);
-    gl.enableVertexAttribArray(velocityProgram.vertexCoordAttribute);
+    velocityProgram.vertexIndexAttribute = gl.getAttribLocation(velocityProgram, "aVertexIndex");
+    velocityProgram.attributes.push(velocityProgram.vertexIndexAttribute);
+    gl.enableVertexAttribArray(velocityProgram.vertexIndexAttribute);
 
     velocityProgram.u_ngridResolution = gl.getUniformLocation(velocityProgram, "u_ngrid_resolution");
     velocityProgram.u_diameter = gl.getUniformLocation(velocityProgram, "u_particleDiameter");
@@ -174,7 +170,7 @@ Simulation.prototype.initShaders = function() {
     densityProgram.viewportSizeLocation = gl.getUniformLocation(densityProgram, "uViewportSize");
     densityProgram.gridSizeLocation = gl.getUniformLocation(densityProgram, "uGridSize");
     densityProgram.massLocation = gl.getUniformLocation(densityProgram, "uMass");
-    densityProgram.weightConstLocation = gl.getUniformLocation(densityProgram, "uWeightConstant");
+    densityProgram.kernelConstLocation = gl.getUniformLocation(densityProgram, "uKernelConstant");
 
     densityProgram.vertexCoordAttribute = gl.getAttribLocation(densityProgram, "aVertexCoord");
     console.log(densityProgram.vertexCoordAttribute);
@@ -342,7 +338,7 @@ Simulation.prototype.initUniforms = function() {
     // Initialize density program uniforms
     gl.useProgram(densityProgram);
     gl.uniform1f(densityProgram.spaceSideLocation, l);
-    gl.uniform1f(densityProgram.weightConstLocation, this.weightConstant);
+    gl.uniform1f(densityProgram.kernelConstLocation, this.densityKernelConstant);
     gl.uniform2f(densityProgram.viewportSizeLocation, s, s);
     gl.uniform1f(densityProgram.gridSizeLocation, s);
     gl.uniform1f(densityProgram.massLocation, this.mass);
@@ -409,11 +405,16 @@ Simulation.prototype.updateVelocities = function() {
 
     gl.viewport(0, 0, this.parGridSide, this.parGridSide);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
-    gl.vertexAttribPointer(velocityProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+    // gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
+    // gl.vertexAttribPointer(velocityProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
+    gl.enableVertexAttribArray(velocityProgram.vertexIndexAttribute);
+    gl.vertexAttribPointer(velocityProgram.vertexIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particleVelocityFramebuffer);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.drawArrays(gl.POINTS, 0, this.parGridSide*this.parGridSide);
+    // gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 };
 
 Simulation.prototype.updatePositions = function() {
@@ -445,7 +446,7 @@ Simulation.prototype.updatePositions = function() {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particlePositionFramebuffer);
     gl.drawArrays(gl.POINTS, 0, this.parGridSide*this.parGridSide);
-    //gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    // gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 };
 
 Simulation.prototype.updateDensities = function() {

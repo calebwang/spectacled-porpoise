@@ -22,9 +22,11 @@ uniform float u_ngrid_D;
 
 uniform float u_numParticles;
 
-uniform vec2 uViewportSize;
 uniform float uGridSize;
 uniform float uSpaceSide;
+
+varying vec2 vTexCoord;
+varying float vVertexIndex;
 
 vec2 textureCoord(float particleNumber) {
     float interval = 1.0/uGridSize;
@@ -72,15 +74,17 @@ vec3 pressureKernel(vec3 dist) {
 
     if (d > 0.0 && d < uSearchRadius) {
         float x = uSearchRadius - d;
-        result = uPressureConstant*x*x*x*normalize(dist);
+        result = uPressureConstant*x*x*normalize(dist);
     }
     return result;
 }
 
 vec3 computeForce(float index) {
-    vec3 dist = getPosition(textureCoord(index)).rgb - getPosition(gl_FragCoord.xy/uViewportSize).rgb;
-
-    float myDensity = getDensity(gl_FragCoord.xy).r;
+    if (vTexCoord == index) {
+        return vec3(0.0);
+    }
+    vec3 dist = getPosition(textureCoord(index)).rgb - getPosition(vTexCoord).rgb;
+    float myDensity = getDensity(vTexCoord).r;
     float density = getDensity(textureCoord(index)).r;
     float c = 3.0*(density - 998.23) + 3.0*(myDensity - 998.23);
     vec3 force = c*uMass*pressureKernel(dist)/998.23;
@@ -90,7 +94,7 @@ vec3 computeForce(float index) {
 
 vec3 computeForceContribution(vec3 offset) {
     vec3 force = vec3(0.0, 0.0, 0.0);
-    vec3 pos = getPosition(gl_FragCoord.xy/uViewportSize).rgb + offset/uSpaceSide;
+    vec3 pos = getPosition(vTexCoord).rgb + offset/uSpaceSide;
 
     if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
         if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
@@ -115,10 +119,11 @@ vec3 computeForceContribution(vec3 offset) {
 }
 
 void main(void) {
-    vec3 vel = getVelocity(gl_FragCoord.xy/uViewportSize).xyz;
-    vec3 pos = getPosition(gl_FragCoord.xy/uViewportSize).xyz;
-    float density = getDensity(gl_FragCoord.xy/uViewportSize).x;
+    vec3 vel = getVelocity(vTexCoord).xyz;
+    vec3 pos = getPosition(vTexCoord).xyz;
+    float density = getDensity(vTexCoord).x;
 
+    // Force due to pressure can be calcuated as
     vec3 force = vec3(0.0, 0.0, 0.0);
     force += computeForceContribution(vec3(0.0, 0.0, 0.0));
     force += computeForceContribution(vec3(0.0, 0.0, 1.0));
@@ -152,22 +157,24 @@ void main(void) {
 
     vel += 0.005*(force/9.23);
 
-    if (pos.x > 1.0) {
+    vec3 newPos = pos + 0.00005 * vel;
+
+    if (newPos.x > 1.0) {
         vel.x = -abs(vel.x) * 0.2;
     }
-    if (pos.y > 1.0) {
+    if (newPos.y > 1.0) {
         vel.y = -abs(vel.y) * 0.2;
     }
-    if (pos.z > 1.0) {
+    if (newPos.z > 1.0) {
         vel.z = -abs(vel.z) * 0.2;
     }
-    if (pos.x < 0.0) {
+    if (newPos.x < 0.0) {
         vel.x = abs(vel.x) * 0.2;
     }
-    if (pos.y < 0.0) {
-        vel.y = 9.8*0.01;
+    if (newPos.y < 0.0) {
+        vel.y = abs(vel.y) * 0.2;//9.8*0.01;
     }
-    if (pos.z < 0.0) {
+    if (newPos.z < 0.0) {
         vel.z = abs(vel.z) * 0.2;
     }
 

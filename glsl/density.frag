@@ -8,7 +8,7 @@ uniform sampler2D uParticleDensityData;
 uniform sampler2D uParticleNeighborData;
 
 uniform float uMass;
-uniform float uWeightConstant;
+uniform float uKernelConstant;
 
 uniform vec2 uViewportSize;
 uniform float uGridSize;
@@ -81,7 +81,7 @@ float densityKernel(vec3 distance) {
     //smoothing kernel
     if (dist < search) {
         float diff = search*search - dist*dist;
-        density = uWeightConstant * uMass * diff * diff * diff;
+        density = uKernelConstant * uMass * diff * diff * diff;
     }
     return density;
 }

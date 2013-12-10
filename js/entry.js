@@ -95,7 +95,9 @@ Programs.prototype.loadShaders = function(shaders, ready) {
     $.when.apply(null, getRequests).done(function() {
         // Really hacky code that relies on the above code block for
         // correct behavior
+        console.log("Downloaded shaders!");
         for (var i = 0; i < shaders.length; i += 1) {
+            console.log("Compiling " + shaders[i] + " shader ...");
             var vs_source = arguments[i * 2][0];
             var fs_source = arguments[i * 2 + 1][0];
             self.addProgram(shaders[i], vs_source, fs_source);
@@ -199,11 +201,15 @@ var setMouseHandlers = function(canvas, simulator) {
 };
 
 $(document).ready(function() {
+    console.log("Initializing canvas and WebGL context");
     var canvas = initCanvas();
     var gl = initGL(canvas);
     var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'density'];
     var programs = new Programs(gl);
+    console.log("Loading shaders...");
     programs.loadShaders(shaders, function() {
+        console.log("Done!");
+        console.log("Initializing simulation...");
         var simulator = new Simulation(gl, programs);
         simulator.initShaders();
         simulator.initParticles();
@@ -211,6 +217,7 @@ $(document).ready(function() {
         simulator.initTextures();
         simulator.initFramebuffers();
         simulator.initUniforms();
+        console.log("Done!");
 
         setupControls(simulator);
         setMouseHandlers(canvas, simulator);
