@@ -8,6 +8,7 @@ uniform sampler2D uParticleDensityData;
 uniform sampler2D uParticleNeighborData;
 
 uniform float uMass;
+uniform float uWeightConstant;
 
 uniform vec2 uViewportSize;
 uniform float uGridSize;
@@ -74,13 +75,13 @@ vec2 voxelIndexFromParticleIndex(float index) {
 }
 
 float densityKernel(vec3 distance) {
-    float dist = abs(length(distance)/uSearchRadius);
-    float search = 1.0;
+    float dist = length(distance);
     float density = 0.0;
+    float search = uSearchRadius;
     //smoothing kernel
     if (dist < search) {
         float diff = search*search - dist*dist;
-        density = uMass * diff * diff * diff;
+        density = uWeightConstant * uMass * diff * diff * diff;
     }
     return density;
 }
@@ -111,7 +112,6 @@ float computeDensityContribution(vec3 offset) {
                 density += max(densityKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.g)).rgb), 0.0);
             }
             if (vertexIndices.b > 0.0) {
-                //density = 1.0;
                 density += max(densityKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.b)).rgb), 0.0);
             }
             if (vertexIndices.a > 0.0) {
@@ -133,7 +133,7 @@ void main(void) {
     vec2 p = voxelIndex(particlePosition) + 0.5;
     //vec2 p = particlePosition.rg + 0.5;
 
-    float density = 0.1;
+    float density = 0.0;
     density += computeDensityContribution(vec3(0.0, 0.0, 0.0));
     density += computeDensityContribution(vec3(0.0, 0.0, 1.0));
     density += computeDensityContribution(vec3(0.0, 1.0, 0.0));

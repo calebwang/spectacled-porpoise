@@ -28,8 +28,5 @@ vec4 getVelocity() {
 void main(void) {
     vec3 pos = getPosition().xyz;
     vec3 dir = getVelocity().xyz;
-    if (pos.y < 1.0) {
-        pos.y = 1.0;
-    }
     gl_FragColor = vec4(pos, 1.0) + 0.01*vec4(dir, 1.0);
 }
