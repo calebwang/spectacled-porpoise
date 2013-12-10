@@ -15,7 +15,6 @@ uniform mat4 uPMatrix;
 varying float vCoord;
 varying vec3 posEye;
 varying float particleDepth;
-varying float test;
 
 vec2 getUVFromIndex(float particleNumber) {
     float interval = 1.0/uGridSize;
@@ -30,7 +29,6 @@ void main(void) {
     vec4 particle = texture2D(uParticlePositionData, uv);
 
     posEye = vec3(uMVMatrix * particle);
-    test = 0.5;
     particleDepth = length(posEye);
     gl_PointSize = uParticleRadius * (uParticleScale / particleDepth);
     gl_Position = uPMatrix * uMVMatrix * particle;
