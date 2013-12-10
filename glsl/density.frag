@@ -53,7 +53,7 @@ vec2 voxelIndex(vec3 pos) {
     // Assumiing smallest voxel coordinate is (0, 0, 0)
     // Find the correct 3D bucket pos belongs into based off the grid side
     // length u_particleDiameter
-    vec3 g = floor(pos / u_particleDiameter);
+    vec3 g = floor(pos*u_ngrid_L);
 
     // Determining which slice the 3D bucket belongs to if a 2D metagraph
     // is constructed from slices of the 3D space
@@ -102,7 +102,6 @@ float computeDensityContribution(vec3 offset) {
     if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
         if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
             vec2 voxel = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
-            vec2 voxel_xy = neighborhoodLocationFromVoxelIndex(voxel);
             vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
 
             if (vertexIndices.r > 0.0) {

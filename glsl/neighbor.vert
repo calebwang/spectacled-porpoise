@@ -27,7 +27,7 @@ vec2 voxelIndex(vec3 pos) {
     // Assumiing smallest voxel coordinate is (0, 0, 0)
     // Find the correct 3D bucket pos belongs into based off the grid side
     // length u_particleDiameter
-    vec3 g = floor(pos*u_ngrid_L/ u_particleDiameter);
+    vec3 g = floor(pos*u_ngrid_L);
 
     // Determining which slice the 3D bucket belongs to if a 2D metagraph
     // is constructed from slices of the 3D space
@@ -56,7 +56,7 @@ void main() {
 
     // Give depth to the position
     gl_Position = vec4(clipSpace, a_particleIndex / u_numParticles, 1);
-    gl_PointSize = 0.5;
+    gl_PointSize = 1.0;
     // // Pass a color where all the components are the index
     vColor = vec4(a_particleIndex);
 }

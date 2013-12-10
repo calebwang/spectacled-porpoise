@@ -2,7 +2,7 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 256;
+    this.gridSize = 16;
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
@@ -17,7 +17,7 @@ var Simulation = function(gl, programs) {
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
-    this.spaceSide = 36; // The length of a dimension in world space
+    this.spaceSide = 16; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
     this.searchRadius = 1.0;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
@@ -81,12 +81,22 @@ Simulation.prototype.initShaders = function() {
     renderProgram.particlePositionDataLocation = gl.getUniformLocation(renderProgram, "uParticlePositionData");
     renderProgram.particleVelocityDataLocation = gl.getUniformLocation(renderProgram, "uParticleVelocityData");
     renderProgram.particleDensityDataLocation = gl.getUniformLocation(renderProgram, "uParticleDensityData");
+    renderProgram.neighborDataLocation = gl.getUniformLocation(renderProgram, "uParticleNeighborData");
+
+    renderProgram.u_ngridResolution = gl.getUniformLocation(renderProgram, "u_ngrid_resolution");
+    renderProgram.u_diameter = gl.getUniformLocation(renderProgram, "u_particleDiameter");
+    renderProgram.u_ngrid_L = gl.getUniformLocation(renderProgram, "u_ngrid_L");
+    renderProgram.u_ngrid_D = gl.getUniformLocation(renderProgram, "u_ngrid_D");
+    renderProgram.u_numParticles = gl.getUniformLocation(renderProgram, "u_numParticles");
+    renderProgram.u_particlePositions = gl.getUniformLocation(renderProgram, "u_particlePositions");
+
 
     // ssfr depth program
     ssfrProgram.particleIndexAttribute = gl.getAttribLocation(ssfrProgram, "aParticleIndex");
     ssfrProgram.attributes.push(ssfrProgram.particleIndexAttribute);
     gl.enableVertexAttribArray(ssfrProgram.particleIndexAttribute);
 
+    ssfrProgram.neighborDataLocation = gl.getUniformLocation(renderProgram, "uParticleNeighborData");
     ssfrProgram.gridSizeLocation = gl.getUniformLocation(ssfrProgram, "uGridSize");
 
     ssfrProgram.particleRadiusLocation = gl.getUniformLocation(ssfrProgram, "uParticleRadius");
@@ -98,6 +108,14 @@ Simulation.prototype.initShaders = function() {
     ssfrProgram.mvMatrixUniform = gl.getUniformLocation(ssfrProgram, "uMVMatrix");
 
     ssfrProgram.particlePositionDataLocation = gl.getUniformLocation(ssfrProgram, "uParticlePositionData");
+
+    ssfrProgram.u_ngridResolution = gl.getUniformLocation(ssfrProgram, "u_ngrid_resolution");
+    ssfrProgram.u_diameter = gl.getUniformLocation(ssfrProgram, "u_particleDiameter");
+    ssfrProgram.u_ngrid_L = gl.getUniformLocation(ssfrProgram, "u_ngrid_L");
+    ssfrProgram.u_ngrid_D = gl.getUniformLocation(ssfrProgram, "u_ngrid_D");
+    ssfrProgram.u_numParticles = gl.getUniformLocation(ssfrProgram, "u_numParticles");
+    ssfrProgram.u_particlePositions = gl.getUniformLocation(ssfrProgram, "u_particlePositions");
+
 
     // Physics program
     physicsProgram.particlePositionDataLocation = gl.getUniformLocation(physicsProgram, "uParticlePositionData");
@@ -221,7 +239,7 @@ Simulation.prototype.initParticles = function() {
     }
 
     for (i = 0; i < (n*4); i += 4) {
-        ppd[i] = random() * l;
+        ppd[i] = random();
         ppd[i + 1] = random() * l;
         ppd[i + 2] = random() * l;
         ppd[i + 3] = 1;
@@ -288,6 +306,14 @@ Simulation.prototype.initUniforms = function() {
         gl.uniform1f(renderProgram.nearLocation, this.clipNear);
         gl.uniform1f(renderProgram.farLocation, this.clipFar);
     }
+    gl.uniform2f(renderProgram.u_parResolution, s, s);
+    gl.uniform2f(renderProgram.u_spaceResolution, this.spaceSide, this.spaceSide);
+    gl.uniform2f(renderProgram.u_ngridResolution, this.neighborGridSide, this.neighborGridSide);
+    gl.uniform1f(renderProgram.u_diameter, this.particleDiameter);
+    gl.uniform1f(renderProgram.u_ngrid_L, this.metagridUnit);
+    gl.uniform1f(renderProgram.u_ngrid_D, this.metagridSide);
+    gl.uniform1f(renderProgram.u_numParticles, this.numParticles);
+
 
     this.setMatrixUniforms();
 
@@ -434,7 +460,7 @@ Simulation.prototype.updateDensities = function() {
     console.log(this.particleDensityTexture);
     gl.bindTexture(gl.TEXTURE_2D, this.particleDensityTexture);
 
-    gl.uniform1i(densityProgram.uNeighborDataLocation, 3);
+    gl.uniform1i(densityProgram.particleNeighborDataLocation, 3);
     gl.activeTexture(gl.TEXTURE3);
     gl.bindTexture(gl.TEXTURE_2D, this.particleNeighborTexture);
 
@@ -507,11 +533,11 @@ Simulation.prototype.updateNeighbors = function() {
     // END
 
     // Clean up
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.colorMask(true, true, true, true);
     gl.disable(gl.STENCIL_TEST);
     gl.disable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 };
 
 Simulation.prototype.drawScene = function() {
@@ -533,6 +559,10 @@ Simulation.prototype.drawScene = function() {
     gl.uniform1i(renderProgram.particleDensityDataLocation, 2);
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, this.particleDensityTexture);
+
+    gl.uniform1i(renderProgram.neighborDataLocation, 3);
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, this.particleNeighborTexture);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
