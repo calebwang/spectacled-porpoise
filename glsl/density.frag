@@ -86,15 +86,6 @@ float densityKernel(vec3 distance) {
     return density;
 }
 
-vec2 neighborhoodLocationFromVoxelIndex(vec2 voxel) {
-    voxel = voxel + 0.5;
-    vec2 zeroToOne = voxel / u_ngrid_resolution;
-    vec2 zeroToTwo = zeroToOne * 2.0;
-    vec2 clipSpace = zeroToTwo - vec2(1.0, 1.0);
-
-    // Give depth to the position
-    return vec2(clipSpace);
-}
 
 float computeDensityContribution(vec3 offset) {
     float density = 0.0;

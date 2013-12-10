@@ -66,18 +66,26 @@ vec2 voxelIndex(vec3 pos) {
     return n_pos;
 }
 
-vec3 pressureKernel(vec3 pos, float index) {
-    vec3 dist = getPosition(textureCoord(index)).rgb - pos;
-    float myDensitiy = getDensity(gl_FragCoord.xy).r;
-    float density = getDensity(textureCoord(index)).r;
+vec3 pressureKernel(vec3 dist) {
     vec3 result = vec3(0.0, 0.0, 0.0);
     float d = length(dist);
 
     if (d > 0.0 && d < uSearchRadius) {
         float x = uSearchRadius - d;
-        result = (getDensity(gl_FragCoord.xy/uViewportSize).r/998.23 - 1.0)*uMass*uPressureConstant*x*x*x*normalize(dist)/density;
+        result = uPressureConstant*x*x*x*normalize(dist);
     }
     return result;
+}
+
+vec3 computeForce(float index) {
+    vec3 dist = getPosition(textureCoord(index)).rgb - getPosition(gl_FragCoord.xy/uViewportSize).rgb;
+
+    float myDensity = getDensity(gl_FragCoord.xy).r;
+    float density = getDensity(textureCoord(index)).r;
+    float c = 3.0*(density - 998.23) + 3.0*(myDensity - 998.23);
+    vec3 force = c*uMass*pressureKernel(dist)/998.23;
+
+    return force/100.0;
 }
 
 vec3 computeForceContribution(vec3 offset) {
@@ -90,16 +98,16 @@ vec3 computeForceContribution(vec3 offset) {
             vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
 
             if (vertexIndices.r > 0.0) {
-                force += pressureKernel(pos, vertexIndices.r);
+                force += computeForce(vertexIndices.r);
             }
             if (vertexIndices.g > 0.0) {
-                force += pressureKernel(pos, vertexIndices.g);
+                force += computeForce(vertexIndices.g);
             }
             if (vertexIndices.b > 0.0) {
-                force += pressureKernel(pos, vertexIndices.b);
+                force += computeForce(vertexIndices.b);
             }
             if (vertexIndices.a > 0.0) {
-                force += pressureKernel(pos, vertexIndices.a);
+                force += computeForce(vertexIndices.a);
             }
         }
     }
@@ -145,25 +153,25 @@ void main(void) {
     vel += 0.005*(force/9.23);
 
     if (pos.x > 1.0) {
-        vel.x = -abs(vel.x) * 0.8;
+        vel.x = -abs(vel.x) * 0.2;
     }
     if (pos.y > 1.0) {
-        vel.y = -abs(vel.y) * 0.8;
+        vel.y = -abs(vel.y) * 0.2;
     }
     if (pos.z > 1.0) {
-        vel.z = -abs(vel.z) * 0.8;
+        vel.z = -abs(vel.z) * 0.2;
     }
     if (pos.x < 0.0) {
-        vel.x = abs(vel.x) * 0.8;
+        vel.x = abs(vel.x) * 0.2;
     }
     if (pos.y < 0.0) {
         vel.y = 9.8*0.01;
     }
     if (pos.z < 0.0) {
-        vel.z = abs(vel.z) * 0.8;
+        vel.z = abs(vel.z) * 0.2;
     }
 
-    vel += 0.005*vec3(0.0, -9.8, 0.0);
+    vel += 0.004*vec3(0.0, -9.8, 0.0);
 
     gl_FragColor = vec4(vel, 1.0);
 }
