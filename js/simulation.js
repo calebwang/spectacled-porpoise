@@ -2,7 +2,7 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 160;
+    this.gridSize = 128;
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
