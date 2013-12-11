@@ -150,6 +150,7 @@ var setupControls = function(simulator) {
     controls.add(simulator, 'auto');
     controls.add(simulator, 'reset');
     controls.add(simulator, 'mass');
+    controls.add(simulator, 'search', 1, 5);
     var customContainer = document.getElementById("my-gui-container");
     customContainer.appendChild(controls.domElement);
 };

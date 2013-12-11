@@ -1,6 +1,9 @@
 precision mediump float;
 
 uniform sampler2D uParticlePositionData;
+uniform sampler2D uParticleVelocityData;
+uniform sampler2D uParticleDensityData;
+uniform sampler2D uParticleNeighborData;
 
 uniform float uParticleRadius;
 uniform float near;

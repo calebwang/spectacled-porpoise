@@ -2,7 +2,7 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 200;
+    this.gridSize = 128;
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
@@ -17,9 +17,10 @@ var Simulation = function(gl, programs) {
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
-    this.spaceSide = 49; // The length of a dimension in world space
+    this.spaceSide = 64; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
-    this.searchRadius = 0.045;
+    this.search = 2.5;
+    this.searchRadius = this.search/this.spaceSide;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = 15.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
@@ -111,6 +112,9 @@ Simulation.prototype.initShaders = function() {
     ssfrProgram.nearLocation = gl.getUniformLocation(ssfrProgram, "near");
     ssfrProgram.farScaleLocation = gl.getUniformLocation(ssfrProgram, "far");
 
+    ssfrProgram.particleVelocityDataLocation = gl.getUniformLocation(ssfrProgram, "uParticleVelocityData");
+    ssfrProgram.particleDensityDataLocation = gl.getUniformLocation(ssfrProgram, "uParticleDensityData");
+    ssfrProgram.neighborDataLocation = gl.getUniformLocation(ssfrProgram, "uParticleNeighborData");
     ssfrProgram.pMatrixUniform = gl.getUniformLocation(ssfrProgram, "uPMatrix");
     ssfrProgram.mvMatrixUniform = gl.getUniformLocation(ssfrProgram, "uMVMatrix");
 
@@ -245,7 +249,7 @@ Simulation.prototype.initParticles = function() {
     }
 
     for (i = 0; i < (n*4); i += 4) {
-        ppd[i] = random()/2 + 0.5;
+        ppd[i] = random()/3;
         ppd[i + 1] = random();
         ppd[i + 2] = random();
         ppd[i + 3] = 1;
@@ -619,6 +623,7 @@ Simulation.prototype.setPrograms = function() {
 Simulation.prototype.reset = function() {
     this.numParticles = this.gridSize*this.gridSize;
     this.parGridSide = this.gridSize;
+    this.searchRadius = this.search/this.spaceSide;
     this.setPrograms();
     this.initParticles();
     this.initBuffers();

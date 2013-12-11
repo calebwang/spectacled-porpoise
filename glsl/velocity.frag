@@ -72,7 +72,7 @@ vec3 pressureKernel(vec3 dist) {
 
     if (d > 0.0 && d < uSearchRadius) {
         float x = uSearchRadius - d;
-        result = uPressureConstant*x*x*x*normalize(dist);
+        result = uPressureConstant*x*x*x*normalize(dist)/uSpaceSide;
     }
     return result;
 }
@@ -94,12 +94,14 @@ vec3 computeForce(float index) {
     float myDensity = getDensity(gl_FragCoord.xy).r;
     float density = getDensity(textureCoord(index)).r;
     float c = 3.0*(density - 998.23) + 3.0*(myDensity - 998.23);
-    vec3 force1 = c*uMass*pressureKernel(dist)/myDensity;
+    vec3 force1 = c*uMass*pressureKernel(dist)/density;
 
-
-    vec3 vel = getVelocity(textureCoord(index)).rgb - getVelocity(gl_FragCoord.xy/uViewportSize).rgb;
-    force1 += vel*uMass*viscosityKernel(dist)/myDensity;
-    return force1/998.23;
+    if (myDensity <= 0.0) {
+        return vec3(0.0);
+    }
+    vec3 vDiff = getVelocity(textureCoord(index)).rgb - getVelocity(gl_FragCoord.xy/uViewportSize).rgb;
+    force1 += vDiff*uMass*viscosityKernel(dist)/density;
+    return force1/40.23;
 }
 
 vec3 computeForceContribution(vec3 offset) {
@@ -174,8 +176,8 @@ void main(void) {
     
     if (cDist > 0.0 && length(vel) > 0.0) {
         vec3 normal = normalize(sign(contactLocal - local));
-        float rest = cDist/(0.01 * length(vel));
-        vel -= (1.0 + rest) * dot(vel, normal) * normal;
+        float rest = cDist/(0.005*length(vel));
+        vel -= (1.0 + 0.5) * dot(vel, normal) * normal;
     }
 
     vel += 0.005*(force3);

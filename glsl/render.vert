@@ -67,7 +67,7 @@ void main(void) {
     if (ind.r == aParticleIndex || ind.g == aParticleIndex || ind.b == aParticleIndex || ind.a == aParticleIndex) {
         gl_Position = uPMatrix * uMVMatrix * particle;
     } else {
-        gl_Position = uPMatrix * uMVMatrix * (particle - vec4(0.5, 0.0, 0.0, 0.0));
+        gl_Position = uPMatrix * uMVMatrix * (particle - vec4(1.0, 0.0, 0.0, 0.0));
     }
 
     gl_PointSize = 3.0;
