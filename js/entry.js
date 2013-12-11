@@ -17,6 +17,12 @@ var initGL = function(canvas) {
     gl = WebGLDebugUtils.makeDebugContext(gl);
     gl.viewportWidth = canvas.width;
     gl.viewportHeight = canvas.height;
+
+    if(!gl) {
+        throw "WebGL not initialized correctly";
+    }   
+
+    console.log("initGL");
     if (!gl.getExtension("OES_texture_float")) {
         throw "No OES_texture_float support";
     }
@@ -59,6 +65,17 @@ var initOutputFramebuffer = function(gl, gridSize, texture) {
     return fb;
 };
 
+// Create a frame buffer that renders to a texture
+var initScreenFramebuffer = function(gl, texture) {
+    var fb = gl.createFramebuffer();
+    fb.width = gl.drawingBufferWidth;
+    fb.height = gl.drawingBufferHeight;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return fb;
+};
+
 // Creates FLOAT RGBA textures
 // gridSize MUST be a power of 2
 var initTexture = function(gl, gridSize, data) {
@@ -78,7 +95,30 @@ var initTexture = function(gl, gridSize, data) {
         gl.TEXTURE_2D, 0, gl.RGBA, gridSize, gridSize,
         // border, data format, data type, pixels
         0, gl.RGBA, gl.FLOAT, data
-    );
+        );
+    return texture;
+};
+
+
+// Creates FLOAT RGBA textures
+var initScreenTexture = function(gl, data) {
+    // Create a texture for particle positions
+    var texture = gl.createTexture();
+
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    // Set texture data
+    gl.texImage2D(
+        // target, level, internal format, width, height
+        gl.TEXTURE_2D, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight,
+        // border, data format, data type, pixels
+        0, gl.RGBA, gl.FLOAT, data
+        );
     return texture;
 };
 
@@ -207,7 +247,7 @@ var setMouseHandlers = function(canvas, simulator) {
 
 $(document).ready(function() {
     var canvas = initCanvas();
-    var gl = initGL(canvas);
+    var gl = initGL(canvas);  
     var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'density', 'ssfr-normal'];
     var programs = new Programs(gl);
     programs.loadShaders(shaders, function() {
