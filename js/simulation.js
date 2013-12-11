@@ -42,6 +42,10 @@ var Simulation = function(gl, programs) {
     // Total side length of the 2D neighborhood grid
     this.neighborGridSide = this.metagridUnit * this.metagridSide;
 
+    var renderbuffer = this.neighborRenderbuffer = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.neighborGridSide, this.neighborGridSide);
+
     var mvMatrix = this.mvMatrix = mat4.create();
     var pMatrix = this.pMatrix = mat4.create();
     mat4.identity(pMatrix);
@@ -498,6 +502,9 @@ Simulation.prototype.updateNeighbors = function() {
 
     // We'll be doing this computation in four passes
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.neighborFramebuffer);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, this.neighborRenderbuffer);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.neighborRenderbuffer);
+
     gl.viewport(0, 0, s, s);
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -543,6 +550,7 @@ Simulation.prototype.updateNeighbors = function() {
 
     // Clean up
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, null);
     gl.colorMask(true, true, true, true);
     gl.disable(gl.STENCIL_TEST);
     gl.disable(gl.DEPTH_TEST);

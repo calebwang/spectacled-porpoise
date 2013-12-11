@@ -48,7 +48,7 @@ void main() {
     // by transforming from 1D to 2D buffer indices
     vec3 particlePosition = texture2D(u_particlePositions, textureCoord(a_particleIndex)).rgb;
     // // Save the voxel position into gl_Position
-    vec2 p = voxelIndex(particlePosition) + 0.5;
+    vec2 p = voxelIndex(particlePosition) + 0.25;
     //vec2 p = particlePosition.rg + 0.5;
     vec2 zeroToOne = p / u_ngrid_resolution;
     vec2 zeroToTwo = zeroToOne * 2.0;

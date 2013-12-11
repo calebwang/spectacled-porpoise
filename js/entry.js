@@ -215,7 +215,7 @@ $(document).ready(function() {
         setupControls(simulator);
         setMouseHandlers(canvas, simulator);
 
-        var render = function() {
+        render = function() {
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.enable(gl.DEPTH_TEST);
             console.log("rendering frame");
