@@ -204,7 +204,7 @@ $(document).ready(function() {
     console.log("Initializing canvas and WebGL context");
     var canvas = initCanvas();
     var gl = initGL(canvas);
-    var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'density'];
+    var shaders = ['render', 'debug', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'density'];
     var programs = new Programs(gl);
     console.log("Loading shaders...");
     programs.loadShaders(shaders, function() {
@@ -223,8 +223,6 @@ $(document).ready(function() {
         setMouseHandlers(canvas, simulator);
 
         var render = function() {
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            gl.enable(gl.DEPTH_TEST);
             console.log("rendering frame");
             if (simulator.auto) {
                 requestAnimFrame(render);

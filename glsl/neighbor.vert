@@ -55,8 +55,8 @@ void main() {
     vec2 clipSpace = zeroToTwo - vec2(1.0, 1.0);
 
     // Give depth to the position
-    gl_Position = vec4(clipSpace, a_particleIndex / u_numParticles, 1);
+    gl_Position = vec4(clipSpace, a_particleIndex / u_numParticles, 1.0);
     gl_PointSize = 1.0;
-    // // Pass a color where all the components are the index
+    // Pass a color where all the components are the index
     vColor = vec4(a_particleIndex);
 }

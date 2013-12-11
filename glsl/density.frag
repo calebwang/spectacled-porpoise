@@ -17,14 +17,6 @@ uniform float u_ngrid_D;
 
 varying vec2 vTexCoord;
 
-vec2 getUVFromIndex(float particleNumber) {
-    float interval = 1.0/uGridSize;
-    vec2 uv;
-    uv.x = interval * (mod(particleNumber, uGridSize) + 0.5);
-    uv.y = interval * (floor(particleNumber/uGridSize) + 0.5);
-    return uv;
-}
-
 vec4 getPosition(vec2 texCoord) {
     return texture2D(uParticlePositionData, texCoord);
 }
@@ -62,42 +54,42 @@ vec2 voxelIndexFromParticleIndex(float index) {
     return voxelIndex(pos) + 0.5;
 }
 
-float densityKernel(vec3 dist) {
-    float d = length(dist) * u_ngrid_L;
+float densityKernel(vec3 myPos, vec3 neighbor) {
+    float d = distance(myPos, neighbor) * u_ngrid_L;
     float density = 0.0;
     float search = uSearchRadius;
     //smoothing kernel
     if (d < search) {
         float diff = search*search - d*d;
-        density = uKernelConstant * uMass * d * d * d;
+        density = uKernelConstant * uMass * diff * diff * diff;
     }
     return density;
 }
 
 
-float computeDensityContribution(vec3 offset) {
+float computeDensityContribution(vec3 myPos, vec3 offset) {
     float density = 0.0;
-    vec3 pos = getPosition(vTexCoord).xyz + offset/u_space_resolution;
-    if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
-        if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
-            vec2 voxel = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
-            vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
+    vec3 pos = getPosition(vTexCoord).xyz + offset/u_space_resolution.x;
+    vec3 clampedPos = clamp(pos, 0.0, 1.0);
+    bvec3 compare = equal(pos, clampedPos);
+    if (compare.x && compare.y && compare.z) {
+        vec2 voxel = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
+        vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
 
-            if (vertexIndices.r > 0.0) {
-                density += max(densityKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.r)).rgb), 0.0);
-            }
-            if (vertexIndices.g > 0.0) {
-                density += max(densityKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.g)).rgb), 0.0);
-            }
-            if (vertexIndices.b > 0.0) {
-                density += max(densityKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.b)).rgb), 0.0);
-            }
-            if (vertexIndices.a > 0.0) {
-                density += max(densityKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.a)).rgb), 0.0);
-            }
-            if (density < 0.0) {
-                return 0.0;
-            }
+        if (vertexIndices.r > 0.0) {
+            density += max(densityKernel(myPos, texture2D(uParticlePositionData, textureCoord(vertexIndices.r)).rgb), 0.0);
+        }
+        if (vertexIndices.g > 0.0) {
+            density += max(densityKernel(myPos, texture2D(uParticlePositionData, textureCoord(vertexIndices.g)).rgb), 0.0);
+        }
+        if (vertexIndices.b > 0.0) {
+            density += max(densityKernel(myPos, texture2D(uParticlePositionData, textureCoord(vertexIndices.b)).rgb), 0.0);
+        }
+        if (vertexIndices.a > 0.0) {
+            density += max(densityKernel(myPos, texture2D(uParticlePositionData, textureCoord(vertexIndices.a)).rgb), 0.0);
+        }
+        if (density < 0.0) {
+            return 0.0;
         }
     }
     return density;
@@ -106,41 +98,41 @@ float computeDensityContribution(vec3 offset) {
 void main(void) {
     // Get the 3D particle position corrresponding to the particle index
     // by transforming from 1D to 2D buffer indices
-    vec3 particlePosition = getPosition(vTexCoord).xyz;
+    vec3 pos = getPosition(vTexCoord).xyz;
     // // Save the voxel position into gl_Position
-    vec2 p = voxelIndex(particlePosition) + 0.5;
+    vec2 p = voxelIndex(pos) + 0.5;
     //vec2 p = particlePosition.rg + 0.5;
 
     float density = 0.0;
-    density += computeDensityContribution(vec3(0.0, 0.0, 0.0));
-    density += computeDensityContribution(vec3(0.0, 0.0, 1.0));
-    density += computeDensityContribution(vec3(0.0, 1.0, 0.0));
-    density += computeDensityContribution(vec3(0.0, 1.0, 1.0));
-    density += computeDensityContribution(vec3(0.0, -1.0, 0.0));
-    density += computeDensityContribution(vec3(0.0, 0.0, -1.0));
-    density += computeDensityContribution(vec3(0.0, -1.0, -1.0));
-    density += computeDensityContribution(vec3(0.0, 1.0, -1.0));
-    density += computeDensityContribution(vec3(0.0, -1.0, 1.0));
+    density += computeDensityContribution(pos, vec3(0.0, 0.0, 0.0));
+    density += computeDensityContribution(pos, vec3(0.0, 0.0, 1.0));
+    density += computeDensityContribution(pos, vec3(0.0, 1.0, 0.0));
+    density += computeDensityContribution(pos, vec3(0.0, 1.0, 1.0));
+    density += computeDensityContribution(pos, vec3(0.0, -1.0, 0.0));
+    density += computeDensityContribution(pos, vec3(0.0, 0.0, -1.0));
+    density += computeDensityContribution(pos, vec3(0.0, -1.0, -1.0));
+    density += computeDensityContribution(pos, vec3(0.0, 1.0, -1.0));
+    density += computeDensityContribution(pos, vec3(0.0, -1.0, 1.0));
 
-    density += computeDensityContribution(vec3(1.0, 0.0, 0.0));
-    density += computeDensityContribution(vec3(1.0, 0.0, 1.0));
-    density += computeDensityContribution(vec3(1.0, 1.0, 0.0));
-    density += computeDensityContribution(vec3(1.0, 1.0, 1.0));
-    density += computeDensityContribution(vec3(1.0, -1.0, 0.0));
-    density += computeDensityContribution(vec3(1.0, 0.0, -1.0));
-    density += computeDensityContribution(vec3(1.0, -1.0, -1.0));
-    density += computeDensityContribution(vec3(1.0, 1.0, -1.0));
-    density += computeDensityContribution(vec3(1.0, -1.0, 1.0));
+    density += computeDensityContribution(pos, vec3(1.0, 0.0, 0.0));
+    density += computeDensityContribution(pos, vec3(1.0, 0.0, 1.0));
+    density += computeDensityContribution(pos, vec3(1.0, 1.0, 0.0));
+    density += computeDensityContribution(pos, vec3(1.0, 1.0, 1.0));
+    density += computeDensityContribution(pos, vec3(1.0, -1.0, 0.0));
+    density += computeDensityContribution(pos, vec3(1.0, 0.0, -1.0));
+    density += computeDensityContribution(pos, vec3(1.0, -1.0, -1.0));
+    density += computeDensityContribution(pos, vec3(1.0, 1.0, -1.0));
+    density += computeDensityContribution(pos, vec3(1.0, -1.0, 1.0));
 
-    density += computeDensityContribution(vec3(-1.0, 0.0, 0.0));
-    density += computeDensityContribution(vec3(-1.0, 0.0, 1.0));
-    density += computeDensityContribution(vec3(-1.0, 1.0, 0.0));
-    density += computeDensityContribution(vec3(-1.0, 1.0, 1.0));
-    density += computeDensityContribution(vec3(-1.0, -1.0, 0.0));
-    density += computeDensityContribution(vec3(-1.0, 0.0, -1.0));
-    density += computeDensityContribution(vec3(-1.0, -1.0, -1.0));
-    density += computeDensityContribution(vec3(-1.0, 1.0, -1.0));
-    density += computeDensityContribution(vec3(-1.0, -1.0, 1.0));
+    density += computeDensityContribution(pos, vec3(-1.0, 0.0, 0.0));
+    density += computeDensityContribution(pos, vec3(-1.0, 0.0, 1.0));
+    density += computeDensityContribution(pos, vec3(-1.0, 1.0, 0.0));
+    density += computeDensityContribution(pos, vec3(-1.0, 1.0, 1.0));
+    density += computeDensityContribution(pos, vec3(-1.0, -1.0, 0.0));
+    density += computeDensityContribution(pos, vec3(-1.0, 0.0, -1.0));
+    density += computeDensityContribution(pos, vec3(-1.0, -1.0, -1.0));
+    density += computeDensityContribution(pos, vec3(-1.0, 1.0, -1.0));
+    density += computeDensityContribution(pos, vec3(-1.0, -1.0, 1.0));
 
-    gl_FragColor = vec4(density);
+    gl_FragColor = vec4(density, 0, 0, 1);
 }
