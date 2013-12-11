@@ -129,6 +129,7 @@ Programs.prototype.addProgram = function(name, vs, fs) {
     program.attributes = [];
     this[name] = program;
 };
+
 // END PROGRAMS HELPER ********************************************************
 
 var disableAttributes = function(gl, program) {

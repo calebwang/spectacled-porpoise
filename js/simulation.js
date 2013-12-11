@@ -22,6 +22,7 @@ var Simulation = function(gl, programs) {
     this.searchRadius = 5;
     this.densityKernelConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = -45.0/(Math.PI*Math.pow(this.searchRadius, 6));
+    this.wViscosityConstant = 45.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
     console.log(this.densityKernelConstant);
     console.log(this.wPressureConstant);
@@ -56,6 +57,16 @@ var Simulation = function(gl, programs) {
     this.viewportQuadBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, viewportQuadVertices, gl.STATIC_DRAW);
+
+    var nv = [];
+    for (var i = -1; i <= 1; i++) {
+        for (var j = -1; j <= 1; j++) {
+            for (var k = -1; k <= 1; k++) {
+                nv.push(i, j, k);
+            }
+        }
+    }
+    this.neighborVoxels = new Float32Array(nv);
 };
 
 // Initialize shader variables and locations
@@ -135,6 +146,7 @@ Simulation.prototype.initShaders = function() {
     //maximum search distance
     velocityProgram.searchRadiusLocation = gl.getUniformLocation(velocityProgram, "uSearchRadius");
     velocityProgram.wPressureConstLocation = gl.getUniformLocation(velocityProgram, "uPressureConstant");
+    velocityProgram.wViscosityConstLocation = gl.getUniformLocation(velocityProgram, "uViscosityConstant");
 
     velocityProgram.gridSizeLocation = gl.getUniformLocation(velocityProgram, "uGridSize");
     velocityProgram.massLocation = gl.getUniformLocation(velocityProgram, "uMass");
@@ -147,6 +159,8 @@ Simulation.prototype.initShaders = function() {
     velocityProgram.u_ngridResolution = gl.getUniformLocation(velocityProgram, "u_ngrid_resolution");
     velocityProgram.u_ngrid_L = gl.getUniformLocation(velocityProgram, "u_ngrid_L");
     velocityProgram.u_ngrid_D = gl.getUniformLocation(velocityProgram, "u_ngrid_D");
+
+    velocityProgram.u_neighborVoxels = gl.getUniformLocation(velocityProgram, "u_neighborVoxels");
 
 
     // Density program
@@ -307,14 +321,14 @@ Simulation.prototype.initUniforms = function() {
     gl.useProgram(velocityProgram);
     gl.uniform1f(velocityProgram.gridSizeLocation, s);
     gl.uniform1f(velocityProgram.wPressureConstLocation, this.wPressureConstant);
+    gl.uniform1f(velocityProgram.wViscosityConstLocation, this.wViscosityConstant);
     gl.uniform1f(velocityProgram.massLocation, this.mass);
     gl.uniform1f(velocityProgram.searchRadiusLocation, this.searchRadius);
     gl.uniform3f(velocityProgram.u_spaceResolution, l, l, l);
     gl.uniform2f(velocityProgram.u_ngridResolution, ld, ld);
     gl.uniform1f(velocityProgram.u_ngrid_L, this.metagridUnit);
     gl.uniform1f(velocityProgram.u_ngrid_D, this.metagridSide);
-    console.log(velocityProgram);
-
+    gl.uniform3fv(velocityProgram.u_neighborVoxels, this.neighborVoxels);
 
     // Initialize density program uniforms
     gl.useProgram(densityProgram);

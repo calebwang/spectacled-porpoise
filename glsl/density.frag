@@ -69,7 +69,7 @@ float densityKernel(vec3 myPos, vec3 neighbor) {
 
 float computeDensityContribution(vec3 myPos, vec3 offset) {
     float density = 0.0;
-    vec3 pos = getPosition(vTexCoord).xyz + offset/u_space_resolution.x;
+    vec3 pos = getPosition(vTexCoord).xyz + offset/u_space_resolution;
     vec3 clampedPos = clamp(pos, 0.0, 1.0);
     bvec3 compare = equal(pos, clampedPos);
     if (compare.x && compare.y && compare.z) {
