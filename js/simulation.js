@@ -5,8 +5,8 @@ var Simulation = function(gl, programs) {
     this.gridSize = 256;
     this.viscosity = 0.01;
     this.debug = false;
-    this.auto = true;
-    this.ssfr = false;
+    this.auto = false;
+    this.ssfr = true;
     this.normal = false;
     this.particleRadius = 1;
     this.mass = 1.0;
@@ -98,7 +98,7 @@ Simulation.prototype.initShaders = function() {
     //ssfr normal program
     surfaceNormalProgram.surfaceDepthLocation = gl.getUniformLocation(surfaceNormalProgram, "uSurfaceDepthData");
     surfaceNormalProgram.vertexCoordAttribute = gl.getAttribLocation(surfaceNormalProgram, "aVertexCoord");
-    console.log(surfaceNormalProgram.vertexCoordAttribute);
+    surfaceNormalProgram.viewportSizeLocation = gl.getUniformLocation(surfaceNormalProgram, "uViewportSize");
     surfaceNormalProgram.attributes.push(surfaceNormalProgram.vertexCoordAttribute);
     gl.enableVertexAttribArray(surfaceNormalProgram.vertexCoordAttribute);
 
@@ -290,7 +290,8 @@ Simulation.prototype.initUniforms = function() {
 
     //initialize surface normal program uniforms
     gl.useProgram(surfaceNormalProgram);
-    gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
+    gl.uniformMatrix4fv(surfaceNormalProgram.pMatrixUniform, false, this.pMatrix);
+    gl.uniform2f(surfaceNormalProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
 
     // Initialize physics program uniforms
     gl.useProgram(physicsProgram);
@@ -505,9 +506,15 @@ Simulation.prototype.updateNeighbors = function() {
 
 Simulation.prototype.renderSurface = function() {
      var gl = this.gl;
+
+     console.log("rendering surface");
+     console.log(gl.viewportWidth);
+     console.log(gl.viewportHeight);
+
      var surfaceDepthProgram = this.surfaceDepthProgram;
      var surfaceNormalProgram = this.surfaceNormalProgram;
 
+     // First calculate the surface Depths
      enableAttributes(gl, surfaceDepthProgram);
      gl.useProgram(surfaceDepthProgram);
  
@@ -516,41 +523,38 @@ Simulation.prototype.renderSurface = function() {
      gl.activeTexture(gl.TEXTURE0);
      gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
 
-     gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceDepthFramebuffer);
      gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-     //console.log(gl.drawingBufferWidth);
-     
- 
+
      mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, this.clipNear, this.clipFar);
      mat4.identity(this.mvMatrix);
      mat4.translate(this.mvMatrix, this.mvMatrix,[-this.spaceSide/2, -this.spaceSide/2, -3.0 * this.spaceSide]);
      mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
- 
+     gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
+     gl.uniformMatrix4fv(surfaceDepthProgram.mvMatrixUniform, false, this.mvMatrix);
+      
      gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
      gl.enableVertexAttribArray(surfaceDepthProgram.particleIndexAttribute);
      gl.vertexAttribPointer(surfaceDepthProgram.particleIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
-     gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
-     gl.uniformMatrix4fv(surfaceDepthProgram.mvMatrixUniform, false, this.mvMatrix);
-
-     //console.log("writing to surface depth framebuffer");
-     //console.log(this.surfaceDepthFramebuffer);
-     
+     gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceDepthFramebuffer);
+     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
      gl.drawArrays(gl.POINTS, 0, this.numParticles);
 
+     // calculate the surface normals from depths
      enableAttributes(gl, surfaceNormalProgram);
      gl.useProgram(surfaceNormalProgram);
-     //Set TEXTURE0 to surface depth texture
+
+     // Set TEXTURE0 to surface depth texture
      gl.uniform1i(surfaceNormalProgram.surfaceDepthDataLocation, 0);
      gl.activeTexture(gl.TEXTURE0);
      gl.bindTexture(gl.TEXTURE_2D, this.surfaceDepthTexture);
-
      gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
      gl.vertexAttribPointer(surfaceNormalProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+
+     // render to screen
      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-     
+     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);     
  };
 
 Simulation.prototype.drawScene = function() {
