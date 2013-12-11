@@ -19,10 +19,10 @@ var Simulation = function(gl, programs) {
     // In each direction
     this.spaceSide = 64; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
-    this.search = 2.5;
+    this.search = 3.5;
     this.searchRadius = this.search/this.spaceSide;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
-    this.wPressureConstant = 15.0/(Math.PI*Math.pow(this.searchRadius, 6));
+    this.wPressureConstant = -45.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
     console.log(this.weightConstant);
     console.log(this.wPressureConstant);

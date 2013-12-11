@@ -72,7 +72,7 @@ vec3 pressureKernel(vec3 dist) {
 
     if (d > 0.0 && d < uSearchRadius) {
         float x = uSearchRadius - d;
-        result = uPressureConstant*x*x*x*normalize(dist)/uSpaceSide;
+        result = uPressureConstant*x*x*x*normalize(dist);
     }
     return result;
 }
@@ -101,7 +101,7 @@ vec3 computeForce(float index) {
     }
     vec3 vDiff = getVelocity(textureCoord(index)).rgb - getVelocity(gl_FragCoord.xy/uViewportSize).rgb;
     force1 += vDiff*uMass*viscosityKernel(dist)/density;
-    return force1/40.23;
+    return force1;
 }
 
 vec3 computeForceContribution(vec3 offset) {
@@ -166,6 +166,7 @@ void main(void) {
     force3 += computeForceContribution(vec3(-1.0, 1.0, -1.0));
     force3 += computeForceContribution(vec3(-1.0, -1.0, 1.0));
 
+    force3 = force3/density;
 
     vec3 center = vec3(0.5);
     vec3 local = pos - center;
