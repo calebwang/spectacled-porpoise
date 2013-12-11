@@ -19,7 +19,7 @@ var Simulation = function(gl, programs) {
     // between (0, 0, 0) and (l, l, l), where l = this.spaceSide
     // Each particle has a diameter of 1 m^3
     this.spaceSide = 64; // The length of a dimension in m
-    this.searchRadius = 4;
+    this.searchRadius = 5;
     this.densityKernelConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = -45.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
