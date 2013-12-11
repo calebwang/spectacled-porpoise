@@ -21,6 +21,7 @@ uniform float u_ngrid_L;
 uniform float u_ngrid_D;
 
 uniform float u_numParticles;
+uniform float uViscosity;
 
 uniform vec2 uViewportSize;
 uniform float uGridSize;
@@ -106,7 +107,7 @@ vec3 computeForce(float index) {
         return vec3(0.0);
     }
     vec3 vDiff = getVelocity(textureCoord(index)).rgb - getVelocity(coord).rgb;
-    force1 += vDiff*uMass*viscosityKernel(dist)/998.23;
+    force1 += uViscosity*vDiff*uMass*viscosityKernel(dist)/998.23;
     return force1;
 }
 

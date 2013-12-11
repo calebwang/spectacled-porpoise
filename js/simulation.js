@@ -23,6 +23,7 @@ var Simulation = function(gl, programs) {
     this.searchRadius = this.search/this.spaceSide;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = -45.0/(Math.PI*Math.pow(this.searchRadius, 6));
+    this.viscosity = 1.0;
 
     console.log(this.weightConstant);
     console.log(this.wPressureConstant);
@@ -163,6 +164,7 @@ Simulation.prototype.initShaders = function() {
     velocityProgram.viewportSizeLocation = gl.getUniformLocation(velocityProgram, "uViewportSize");
     velocityProgram.gridSizeLocation = gl.getUniformLocation(velocityProgram, "uGridSize");
     velocityProgram.massLocation = gl.getUniformLocation(velocityProgram, "uMass");
+    velocityProgram.viscosityLocation = gl.getUniformLocation(velocityProgram, "uViscosity");
 
     //velocityProgram.vertexCoordAttribute = gl.getAttribLocation(velocityProgram, "aVertexCoord");
     //console.log(velocityProgram.vertexCoordAttribute);
@@ -342,6 +344,7 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform1f(velocityProgram.gridSizeLocation, s);
     gl.uniform1f(velocityProgram.wPressureConstLocation, this.wPressureConstant);
     gl.uniform1f(velocityProgram.massLocation, this.mass);
+    gl.uniform1f(velocityProgram.viscosityLocation, this.viscosity);
     gl.uniform1f(velocityProgram.searchRadiusLocation, this.searchRadius);
 
     // Initialize density program uniforms
