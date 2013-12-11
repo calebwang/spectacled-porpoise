@@ -95,14 +95,18 @@ vec3 computeForce(float index) {
 
     float myDensity = getDensity(coord).r;
     float density = getDensity(textureCoord(index)).r;
-    float c = 1.0*(density - 998.23) + 1.0*(myDensity - 998.23);
-    vec3 force1 = c*uMass*pressureKernel(dist)/density;
+    float pressure = 1.0*(density - 998.23);
+    float myPressure = 1.0*(density - 998.23);
+    //pressure = (pow(density/998.23, 7.0) - 1.0);
+    //myPressure = (pow(myDensity/998.23, 7.0) - 1.0);
+    float c = (pressure + myPressure)/2.0;
+    vec3 force1 = c*uMass*pressureKernel(dist)/998.23;
 
     if (myDensity <= 0.0) {
         return vec3(0.0);
     }
     vec3 vDiff = getVelocity(textureCoord(index)).rgb - getVelocity(coord).rgb;
-    force1 += vDiff*uMass*viscosityKernel(dist)/density;
+    force1 += vDiff*uMass*viscosityKernel(dist)/998.23;
     return force1;
 }
 
