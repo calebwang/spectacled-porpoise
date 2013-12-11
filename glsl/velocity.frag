@@ -146,31 +146,22 @@ void main(void) {
         force += computeForceContribution(u_neighborVoxels[i]);
     }
 
+    vec3 center = vec3(0.5);
+    vec3 local = pos - center;
+    vec3 box = vec3(0.48);
+    vec3 contactLocal = min(box, max(-box, local));
+
+    float cDist = length(contactLocal + center - pos);
+
+    if (cDist > 0.0 && length(vel) > 0.0) {
+        vec3 normal = normalize(sign(contactLocal - local));
+        float rest = cDist/(0.005*length(vel));
+        vel -= (1.0 + 0.5) * dot(vel, normal) * normal;
+    }
+
     // a = f_i / d_i, where f is force and d is density
     // Assuming this is meters / second
     vel += (force/density) / u_space_resolution / 60.0;
     vel += vec3(0.0, -9.8, 0.0) / u_space_resolution / 60.0;
-
-    vec3 newPos = pos + vel;
-
-    if (newPos.x > 1.0) {
-        vel.x = -abs(vel.x) * 0.2;
-    }
-    if (newPos.y > 1.0) {
-        vel.y = -abs(vel.y) * 0.2;
-    }
-    if (newPos.z > 1.0) {
-        vel.z = -abs(vel.z) * 0.2;
-    }
-    if (newPos.x < 0.0) {
-        vel.x = abs(vel.x) * 0.2;
-    }
-    if (newPos.y < 0.0) {
-        vel.y = abs(vel.y) * 0.2;
-    }
-    if (newPos.z < 0.0) {
-        vel.z = abs(vel.z) * 0.2;
-    }
-
     gl_FragColor = vec4(vel, 1.0);
 }
