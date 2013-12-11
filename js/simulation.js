@@ -254,8 +254,8 @@ Simulation.prototype.initParticles = function() {
 
     for (i = 0; i < (n*4); i += 4) {
         ppd[i] = random()/4;
-        ppd[i + 1] = random();
-        ppd[i + 2] = random();
+        ppd[i + 1] = random()/2;
+        ppd[i + 2] = random()/4;
         ppd[i + 3] = 1;
 
         pvd[i] = 0.0;//(random() * 2 - 1);
