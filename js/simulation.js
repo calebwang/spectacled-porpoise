@@ -2,7 +2,7 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 128;
+    this.gridSize = 160;
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
@@ -28,7 +28,7 @@ var Simulation = function(gl, programs) {
     console.log(this.wPressureConstant);
 
     this.restDensity = 998.23;
-    this.mass = this.restDensity/(this.spaceSide*this.spaceSide*this.spaceSide);
+    this.mass = 0.02;
 
     console.log(this.mass);
 
@@ -253,7 +253,7 @@ Simulation.prototype.initParticles = function() {
     }
 
     for (i = 0; i < (n*4); i += 4) {
-        ppd[i] = random()/3;
+        ppd[i] = random()/4;
         ppd[i + 1] = random();
         ppd[i + 2] = random();
         ppd[i + 3] = 1;

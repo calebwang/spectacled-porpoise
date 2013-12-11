@@ -51,7 +51,7 @@ vec2 voxelIndex(vec3 pos) {
     // Assumiing smallest voxel coordinate is (0, 0, 0)
     // Find the correct 3D bucket pos belongs into based off the grid side
     // length u_particleDiameter
-    vec3 g = floor(pos*u_ngrid_L / u_particleDiameter);
+    vec3 g = floor(pos*u_ngrid_L);
 
     // Determining which slice the 3D bucket belongs to if a 2D metagraph
     // is constructed from slices of the 3D space
@@ -73,7 +73,7 @@ vec3 pressureKernel(vec3 dist) {
 
     if (d > 0.0 && d < uSearchRadius) {
         float x = uSearchRadius - d;
-        result = uPressureConstant*x*x*x*normalize(dist)*5.0;
+        result = uPressureConstant*x*x*normalize(dist);
     }
     return result;
 }
@@ -95,7 +95,7 @@ vec3 computeForce(float index) {
 
     float myDensity = getDensity(coord).r;
     float density = getDensity(textureCoord(index)).r;
-    float c = 3.0*(density - 998.23) + 3.0*(myDensity - 998.23);
+    float c = 1.0*(density - 998.23) + 1.0*(myDensity - 998.23);
     vec3 force1 = c*uMass*pressureKernel(dist)/density;
 
     if (myDensity <= 0.0) {
@@ -176,13 +176,14 @@ void main(void) {
     vec3 local = pos - center;
     vec3 box = vec3(0.48);
     vec3 contactLocal = min(box, max(-box, local));
+    vec3 contact = contactLocal + center;
 
     float cDist = length(contactLocal + center - pos);
     
     if (cDist > 0.0 && length(vel) > 0.0) {
         vec3 normal = normalize(sign(contactLocal - local));
         float rest = cDist/(0.005*length(vel));
-        vel -= (1.0 + 0.5) * dot(vel, normal) * normal;
+        vel -= (1.0 + 0.7) * dot(vel, normal) * normal;
     }
 
     vel += 0.005*(force3);
