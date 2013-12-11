@@ -61,6 +61,14 @@ void main(void) {
     vec2 uv = getUVFromIndex(aParticleIndex);
     vec4 particle = texture2D(uParticlePositionData, uv);
     vCoord = aParticleIndex;
-    gl_Position = uPMatrix * uMVMatrix * particle;
+    vec3 pos = particle.rgb;
+    vec2 nIndex = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
+    vec4 ind = texture2D(uParticleNeighborData, nIndex);
+    if (ind.r == aParticleIndex || ind.g == aParticleIndex || ind.b == aParticleIndex || ind.a == aParticleIndex) {
+        gl_Position = uPMatrix * uMVMatrix * particle;
+    } else {
+        gl_Position = uPMatrix * uMVMatrix * (particle - vec4(0.5, 0.0, 0.0, 0.0));
+    }
+
     gl_PointSize = 3.0;
 }

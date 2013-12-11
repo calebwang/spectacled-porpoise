@@ -9,7 +9,7 @@ uniform float uGridSize;
 
 varying float vCoord;
 
-vec2 getUVFromIndex(float particleNumber) {
+vec2 textureCoord(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
     uv.x = interval * (mod(particleNumber, uGridSize) + 0.5);
@@ -18,5 +18,5 @@ vec2 getUVFromIndex(float particleNumber) {
 }
 
 void main(void) {
-    gl_FragColor = texture2D(uParticleDensityData, getUVFromIndex(vCoord))/10000.0;
+    gl_FragColor = texture2D(uParticleDensityData, textureCoord(vCoord))/1000.0;
 }

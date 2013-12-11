@@ -2,7 +2,7 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 256;
+    this.gridSize = 200;
     this.viscosity = 0.01;
     this.debug = false;
     this.auto = true;
@@ -17,9 +17,9 @@ var Simulation = function(gl, programs) {
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
-    this.spaceSide = 36; // The length of a dimension in world space
+    this.spaceSide = 49; // The length of a dimension in world space
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
-    this.searchRadius = 0.027;
+    this.searchRadius = 0.045;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = 15.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
@@ -45,6 +45,7 @@ var Simulation = function(gl, programs) {
     var renderbuffer = this.neighborRenderbuffer = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.neighborGridSide, this.neighborGridSide);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 
     var mvMatrix = this.mvMatrix = mat4.create();
     var pMatrix = this.pMatrix = mat4.create();
