@@ -19,7 +19,7 @@ var Simulation = function(gl, programs) {
     // between (0, 0, 0) and (l, l, l), where l = this.spaceSide
     // Each particle has a diameter of 1 m^3
     this.spaceSide = 64; // The length of a dimension in m
-    this.searchRadius = 20;
+    this.searchRadius = 4;
     this.densityKernelConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = -45.0/(Math.PI*Math.pow(this.searchRadius, 6));
 
@@ -143,6 +143,7 @@ Simulation.prototype.initShaders = function() {
     velocityProgram.attributes.push(velocityProgram.vertexIndexAttribute);
     gl.enableVertexAttribArray(velocityProgram.vertexIndexAttribute);
 
+    velocityProgram.u_spaceResolution = gl.getUniformLocation(velocityProgram, "u_space_resolution");
     velocityProgram.u_ngridResolution = gl.getUniformLocation(velocityProgram, "u_ngrid_resolution");
     velocityProgram.u_ngrid_L = gl.getUniformLocation(velocityProgram, "u_ngrid_L");
     velocityProgram.u_ngrid_D = gl.getUniformLocation(velocityProgram, "u_ngrid_D");
@@ -312,6 +313,7 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform2f(velocityProgram.u_ngridResolution, ld, ld);
     gl.uniform1f(velocityProgram.u_ngrid_L, this.metagridUnit);
     gl.uniform1f(velocityProgram.u_ngrid_D, this.metagridSide);
+    console.log(velocityProgram);
 
 
     // Initialize density program uniforms
@@ -492,11 +494,6 @@ Simulation.prototype.updateNeighbors = function() {
     gl.clear(gl.STENCIL_BUFFER_BIT);
     gl.drawArrays(gl.POINTS, 0, n);
 
-    // var output = new Uint8Array(s * s *4);
-    // gl.readPixels(0, 0, s, s, gl.RGBA, gl.UNSIGNED_BYTE, output);
-    // console.log(output);
-    // END
-
     // Clean up
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.colorMask(true, true, true, true);
@@ -507,6 +504,7 @@ Simulation.prototype.updateNeighbors = function() {
 
 Simulation.prototype.drawDebug = function() {
     var gl = this.gl;
+    var s = this.parGridSide;
 
     var debugProgram = this.debugProgram;
     enableAttributes(gl, debugProgram);
@@ -514,15 +512,19 @@ Simulation.prototype.drawDebug = function() {
 
     gl.uniform1i(debugProgram.textureDataLocation, 0);
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this.neighborTexture);
+    gl.bindTexture(gl.TEXTURE_2D, this.particleVelocityTexture);
 
-    gl.viewport(0, 0, this.neighborGridSide, this.neighborGridSide);
+    gl.viewport(0, 0, s, s);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
     gl.enableVertexAttribArray(debugProgram.vertexCoordAttribute);
     gl.vertexAttribPointer(debugProgram.vertexCoordAttribute, 2, gl.FLOAT, false, 0, 0);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    var output = new Uint8Array(s * s *4);
+    gl.readPixels(0, 0, s, s, gl.RGBA, gl.UNSIGNED_BYTE, output);
+    console.log(output);
+    // END
 };
 
 Simulation.prototype.drawScene = function() {

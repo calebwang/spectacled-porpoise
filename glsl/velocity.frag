@@ -155,7 +155,8 @@ void main(void) {
 
     // Using leapfrog integration scheme
     // a = f_i / d_i, where f is force and d is density
-    vel += force/density;
+    vel += (force/density) / u_space_resolution;
+    vel += 0.005 * vec3(0.0, -9.8, 0.0) / u_space_resolution;
 
     vec3 newPos = pos + vel;
 
@@ -177,7 +178,6 @@ void main(void) {
     if (newPos.z < 0.0) {
         vel.z = abs(vel.z) * 0.2;
     }
-    vel += 0.00005 * vec3(0.0, -9.8, 0.0);
 
     gl_FragColor = vec4(vel, 1.0);
 }

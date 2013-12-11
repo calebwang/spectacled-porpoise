@@ -230,6 +230,7 @@ $(document).ready(function() {
             simulator.updateNeighbors();
             simulator.updateDensities();
             simulator.updateVelocities();
+            //simulator.drawDebug();
             simulator.updatePositions();
             simulator.drawScene();
         };
