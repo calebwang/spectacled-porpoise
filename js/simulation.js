@@ -150,6 +150,10 @@ Simulation.prototype.initShaders = function() {
     velocityProgram.particleVelocityDataLocation = gl.getUniformLocation(velocityProgram, "uParticleVelocityData");
     velocityProgram.particleDensityDataLocation = gl.getUniformLocation(velocityProgram, "uParticleDensityData");
     velocityProgram.particleNeighborDataLocation = gl.getUniformLocation(velocityProgram, "uParticleNeighborData");
+    velocityProgram.vertexIndexAttribute = gl.getAttribLocation(velocityProgram, "aVertexIndex");
+    console.log('wat' + velocityProgram.vertexIndexAttribute);
+    velocityProgram.attributes.push(velocityProgram.vertexIndexAttribute);
+    gl.enableVertexAttribArray(velocityProgram.vertexIndexAttribute);
 
     //maximum search distance
     velocityProgram.searchRadiusLocation = gl.getUniformLocation(velocityProgram, "uSearchRadius");
@@ -160,10 +164,10 @@ Simulation.prototype.initShaders = function() {
     velocityProgram.gridSizeLocation = gl.getUniformLocation(velocityProgram, "uGridSize");
     velocityProgram.massLocation = gl.getUniformLocation(velocityProgram, "uMass");
 
-    velocityProgram.vertexCoordAttribute = gl.getAttribLocation(velocityProgram, "aVertexCoord");
-    console.log(velocityProgram.vertexCoordAttribute);
-    velocityProgram.attributes.push(velocityProgram.vertexCoordAttribute);
-    gl.enableVertexAttribArray(velocityProgram.vertexCoordAttribute);
+    //velocityProgram.vertexCoordAttribute = gl.getAttribLocation(velocityProgram, "aVertexCoord");
+    //console.log(velocityProgram.vertexCoordAttribute);
+    //velocityProgram.attributes.push(velocityProgram.vertexCoordAttribute);
+    //gl.enableVertexAttribArray(velocityProgram.vertexCoordAttribute);
 
     velocityProgram.u_ngridResolution = gl.getUniformLocation(velocityProgram, "u_ngrid_resolution");
     velocityProgram.u_diameter = gl.getUniformLocation(velocityProgram, "u_particleDiameter");
@@ -420,11 +424,13 @@ Simulation.prototype.updateVelocities = function() {
 
     gl.viewport(0, 0, this.parGridSide, this.parGridSide);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
-    gl.vertexAttribPointer(velocityProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
+    gl.enableVertexAttribArray(velocityProgram.vertexIndexAttribute);
+    gl.vertexAttribPointer(velocityProgram.vertexIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particleVelocityFramebuffer);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.drawArrays(gl.POINTS, 0, this.parGridSide*this.parGridSide);
+    //gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 };
 
 Simulation.prototype.updatePositions = function() {

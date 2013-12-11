@@ -26,6 +26,7 @@ uniform vec2 uViewportSize;
 uniform float uGridSize;
 uniform float uSpaceSide;
 
+varying float vIndex;
 vec2 textureCoord(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
@@ -72,7 +73,7 @@ vec3 pressureKernel(vec3 dist) {
 
     if (d > 0.0 && d < uSearchRadius) {
         float x = uSearchRadius - d;
-        result = uPressureConstant*x*x*x*normalize(dist);
+        result = uPressureConstant*x*x*x*normalize(dist)*5.0;
     }
     return result;
 }
@@ -89,9 +90,10 @@ float viscosityKernel(vec3 dist) {
 }
 
 vec3 computeForce(float index) {
-    vec3 dist = getPosition(textureCoord(index)).rgb - getPosition(gl_FragCoord.xy/uViewportSize).rgb;
+    vec2 coord = textureCoord(vIndex);
+    vec3 dist = getPosition(textureCoord(index)).rgb - getPosition(coord).rgb;
 
-    float myDensity = getDensity(gl_FragCoord.xy).r;
+    float myDensity = getDensity(coord).r;
     float density = getDensity(textureCoord(index)).r;
     float c = 3.0*(density - 998.23) + 3.0*(myDensity - 998.23);
     vec3 force1 = c*uMass*pressureKernel(dist)/density;
@@ -99,14 +101,15 @@ vec3 computeForce(float index) {
     if (myDensity <= 0.0) {
         return vec3(0.0);
     }
-    vec3 vDiff = getVelocity(textureCoord(index)).rgb - getVelocity(gl_FragCoord.xy/uViewportSize).rgb;
+    vec3 vDiff = getVelocity(textureCoord(index)).rgb - getVelocity(coord).rgb;
     force1 += vDiff*uMass*viscosityKernel(dist)/density;
     return force1;
 }
 
 vec3 computeForceContribution(vec3 offset) {
     vec3 force2 = vec3(0.0, 0.0, 0.0);
-    vec3 pos = getPosition(gl_FragCoord.xy/uViewportSize).rgb + offset/uSpaceSide;
+    vec2 coord = textureCoord(vIndex);
+    vec3 pos = getPosition(coord).rgb + offset/uSpaceSide;
 
     if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
         if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
@@ -131,9 +134,10 @@ vec3 computeForceContribution(vec3 offset) {
 }
 
 void main(void) {
-    vec3 vel = getVelocity(gl_FragCoord.xy/uViewportSize).xyz;
-    vec3 pos = getPosition(gl_FragCoord.xy/uViewportSize).xyz;
-    float density = getDensity(gl_FragCoord.xy/uViewportSize).x;
+    vec2 coord = textureCoord(vIndex);
+    vec3 vel = getVelocity(coord).xyz;
+    vec3 pos = getPosition(coord).xyz;
+    float density = getDensity(coord).x;
 
     vec3 force3 = vec3(0.0, 0.0, 0.0);
     force3 += computeForceContribution(vec3(0.0, 0.0, 0.0));
