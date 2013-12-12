@@ -631,29 +631,34 @@ Simulation.prototype.renderSurface = function() {
      gl.enableVertexAttribArray(surfaceDepthProgram.particleIndexAttribute);
      gl.vertexAttribPointer(surfaceDepthProgram.particleIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
-     //gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceDepthFramebuffer);
-     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-     gl.depthFunc(gl.LESS);
+     if(this.normal) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceDepthFramebuffer);
+     } else {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+     }
+     //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+     gl.clear(gl.COLOR_BUFFER_BIT);
      gl.drawArrays(gl.POINTS, 0, this.numParticles);
 
      // Then calculate the surface normals from depths
-     enableAttributes(gl, surfaceNormalProgram);
-     gl.useProgram(surfaceNormalProgram);
+     if(this.normal) {
+         enableAttributes(gl, surfaceNormalProgram);
+         gl.useProgram(surfaceNormalProgram);
+         gl.enable(DEPTH_TEST);
 
-     // Set TEXTURE0 to surface depth texture
-     gl.uniform1i(surfaceNormalProgram.surfaceDepthLocation, 0);
-     gl.activeTexture(gl.TEXTURE0);
-     gl.bindTexture(gl.TEXTURE_2D, this.surfaceDepthTexture);
+         // Set TEXTURE0 to surface depth texture
+         gl.uniform1i(surfaceNormalProgram.surfaceDepthLocation, 0);
+         gl.activeTexture(gl.TEXTURE0);
+         gl.bindTexture(gl.TEXTURE_2D, this.surfaceDepthTexture);
 
-     gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
-     gl.vertexAttribPointer(surfaceNormalProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+         gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
+         gl.vertexAttribPointer(surfaceNormalProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
 
-     // render to screen
-     /*gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);*/
-
+         // render to screen
+         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
  };
 
 Simulation.prototype.drawScene = function() {
