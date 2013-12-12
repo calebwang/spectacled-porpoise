@@ -71,7 +71,7 @@ vec3 pressureKernel(vec3 myPos, vec3 neighbor) {
         float x = uSearchRadius - d;
         result = uPressureConstant*x*x*normalize(neighbor - myPos);
     }
-    return result;
+    return vec3(0.0) - result;
 }
 
 float viscosityKernel(vec3 myPos, vec3 neighbor) {
@@ -101,7 +101,7 @@ vec3 computeForce(float index) {
     float density = getDensity(neighborTexCoord).x;
 
     float avg_pressure = (pressure(density) + pressure(myDensity)) / 2.0;
-    vec3 pressureForce = -pressureKernel(myPos, neighbor) * avg_pressure * uMass / density;
+    vec3 pressureForce = pressureKernel(myPos, neighbor) * avg_pressure * uMass / density;
 
     vec3 myVelocity = getVelocity(vTexCoord).xyz;
     vec3 velocity = getVelocity(neighborTexCoord).xyz;
@@ -146,31 +146,23 @@ void main(void) {
         force += computeForceContribution(u_neighborVoxels[i]);
     }
 
+    vec3 center = vec3(0.5);
+    vec3 local = pos - center;
+    vec3 box = vec3(0.48);
+    vec3 contactLocal = min(box, max(-box, local));
+    vec3 contact = contactLocal + center;
+
+    float cDist = length(contactLocal + center - pos);
+
+    if (cDist > 0.0 && length(vel) > 0.0) {
+        vec3 normal = normalize(sign(contactLocal - local));
+        vel -= dot(vel, normal) * normal;
+    }
+
     // a = f_i / d_i, where f is force and d is density
     // Assuming this is meters / second
     vel += (force/density) / u_space_resolution / 60.0;
     vel += vec3(0.0, -9.8, 0.0) / u_space_resolution / 60.0;
-
-    vec3 newPos = pos + vel;
-
-    if (newPos.x > 1.0) {
-        vel.x = -abs(vel.x) * 0.2;
-    }
-    if (newPos.y > 1.0) {
-        vel.y = -abs(vel.y) * 0.2;
-    }
-    if (newPos.z > 1.0) {
-        vel.z = -abs(vel.z) * 0.2;
-    }
-    if (newPos.x < 0.0) {
-        vel.x = abs(vel.x) * 0.2;
-    }
-    if (newPos.y < 0.0) {
-        vel.y = abs(vel.y) * 0.2;
-    }
-    if (newPos.z < 0.0) {
-        vel.z = abs(vel.z) * 0.2;
-    }
 
     gl_FragColor = vec4(vel, 1.0);
 }

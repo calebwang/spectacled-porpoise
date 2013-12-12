@@ -19,7 +19,7 @@ var Simulation = function(gl, programs) {
     // between (0, 0, 0) and (l, l, l), where l = this.spaceSide
     // Each particle has a diameter of 1 m^3
     this.spaceSide = 64; // The length of a dimension in m
-    this.searchRadius = 5;
+    this.searchRadius = 1;
     this.densityKernelConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = -45.0/(Math.PI*Math.pow(this.searchRadius, 6));
     this.wViscosityConstant = 45.0/(Math.PI*Math.pow(this.searchRadius, 6));
@@ -240,9 +240,9 @@ Simulation.prototype.initParticles = function() {
         ppd[i + 2] = Math.random(); // random();
         ppd[i + 3] = 1;
 
-        pvd[i] = 0.0;//(random() * 2 - 1);
-        pvd[i + 1] = 0;//(random() * 2 - 1);
-        pvd[i + 2] = 0;// (random() * 2 - 1);
+        pvd[i] = Math.random();//(random() * 2 - 1);
+        pvd[i + 1] = Math.random();//(random() * 2 - 1);
+        pvd[i + 2] = Math.random();// (random() * 2 - 1);
         pvd[i + 3] = 1;
     }
 
