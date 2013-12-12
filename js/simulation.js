@@ -2,28 +2,34 @@ var Simulation = function(gl, programs) {
     this.gl = gl;
     this.programs = programs;
 
-    this.gridSize = 128;
-    this.viscosity = 0.01;
+    this.gridSize = 200;
     this.debug = false;
     this.auto = true;
     this.ssfr = true;
+    this.normal = false;
+    this.particleRadius = 0.2;
 
     this.setPrograms();
 
     this.numParticles = this.gridSize*this.gridSize;
     this.parGridSide = this.gridSize;
-    this.particleRadius = 0.01;
-    this.particleScale = 100;
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
     this.spaceSide = 64; // The length of a dimension in world space
+    this.particleScale = 100.0;
+    
+
+    // Assuming uniform grid where there is an equal number of elements
+    // In each direction
+    this.clipNear = 1.5;
+    this.clipFar = -3;
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
     this.search = 3.5;
     this.searchRadius = this.search/this.spaceSide;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = -45.0/(Math.PI*Math.pow(this.searchRadius, 6));
-    this.viscosity = 1.0;
+    this.viscosity = 10.0;
 
     console.log(this.weightConstant);
     console.log(this.wPressureConstant);
@@ -54,6 +60,8 @@ var Simulation = function(gl, programs) {
     mat4.identity(pMatrix);
     var rotationMatrix = this.rotationMatrix = mat4.create();
     mat4.identity(rotationMatrix);
+    //set up a nicer default view
+    mat4.rotateY(rotationMatrix, rotationMatrix, Math.PI/4); 
 
     // Create quad vertices
     var viewportQuadVertices = new Float32Array([
@@ -71,7 +79,8 @@ var Simulation = function(gl, programs) {
 Simulation.prototype.initShaders = function() {
     var gl = this.gl;
     var renderProgram = this.programs['render'];
-    var ssfrProgram = this.programs['ssfr-depth'];
+    var surfaceDepthProgram = this.programs['ssfr-depth'];
+    var surfaceNormalProgram = this.programs['ssfr-normal'];
     var physicsProgram = this.programs['physics'];
     var velocityProgram = this.programs['velocity'];
     var neighborProgram = this.programs['neighbor'];
@@ -101,33 +110,29 @@ Simulation.prototype.initShaders = function() {
 
 
     // ssfr depth program
-    ssfrProgram.particleIndexAttribute = gl.getAttribLocation(ssfrProgram, "aParticleIndex");
-    ssfrProgram.attributes.push(ssfrProgram.particleIndexAttribute);
-    gl.enableVertexAttribArray(ssfrProgram.particleIndexAttribute);
+    surfaceDepthProgram.particleIndexAttribute = gl.getAttribLocation(surfaceDepthProgram, "aParticleIndex");
+    surfaceDepthProgram.attributes.push(surfaceDepthProgram.particleIndexAttribute);
+    gl.enableVertexAttribArray(surfaceDepthProgram.particleIndexAttribute);
 
-    ssfrProgram.neighborDataLocation = gl.getUniformLocation(renderProgram, "uParticleNeighborData");
-    ssfrProgram.gridSizeLocation = gl.getUniformLocation(ssfrProgram, "uGridSize");
+    surfaceDepthProgram.gridSizeLocation = gl.getUniformLocation(surfaceDepthProgram, "uGridSize");
 
-    ssfrProgram.particleRadiusLocation = gl.getUniformLocation(ssfrProgram, "uParticleRadius");
-    ssfrProgram.particleScaleLocation = gl.getUniformLocation(ssfrProgram, "uScaleRadius");
-    ssfrProgram.nearLocation = gl.getUniformLocation(ssfrProgram, "near");
-    ssfrProgram.farScaleLocation = gl.getUniformLocation(ssfrProgram, "far");
+    surfaceDepthProgram.particleRadiusLocation = gl.getUniformLocation(surfaceDepthProgram, "uParticleRadius");
+    surfaceDepthProgram.particleScaleLocation = gl.getUniformLocation(surfaceDepthProgram, "uParticleScale");
 
-    ssfrProgram.particleVelocityDataLocation = gl.getUniformLocation(ssfrProgram, "uParticleVelocityData");
-    ssfrProgram.particleDensityDataLocation = gl.getUniformLocation(ssfrProgram, "uParticleDensityData");
-    ssfrProgram.neighborDataLocation = gl.getUniformLocation(ssfrProgram, "uParticleNeighborData");
-    ssfrProgram.pMatrixUniform = gl.getUniformLocation(ssfrProgram, "uPMatrix");
-    ssfrProgram.mvMatrixUniform = gl.getUniformLocation(ssfrProgram, "uMVMatrix");
+    surfaceDepthProgram.pMatrixUniform = gl.getUniformLocation(surfaceDepthProgram, "uPMatrix");
+    surfaceDepthProgram.mvMatrixUniform = gl.getUniformLocation(surfaceDepthProgram, "uMVMatrix");
 
-    ssfrProgram.particlePositionDataLocation = gl.getUniformLocation(ssfrProgram, "uParticlePositionData");
+    surfaceDepthProgram.particlePositionDataLocation = gl.getUniformLocation(surfaceDepthProgram, "uParticlePositionData");
+    surfaceDepthProgram.surfaceDepthLocation = gl.getUniformLocation(surfaceDepthProgram, "uSurfaceDepthData");
 
-    ssfrProgram.u_ngridResolution = gl.getUniformLocation(ssfrProgram, "u_ngrid_resolution");
-    ssfrProgram.u_diameter = gl.getUniformLocation(ssfrProgram, "u_particleDiameter");
-    ssfrProgram.u_ngrid_L = gl.getUniformLocation(ssfrProgram, "u_ngrid_L");
-    ssfrProgram.u_ngrid_D = gl.getUniformLocation(ssfrProgram, "u_ngrid_D");
-    ssfrProgram.u_numParticles = gl.getUniformLocation(ssfrProgram, "u_numParticles");
-    ssfrProgram.u_particlePositions = gl.getUniformLocation(ssfrProgram, "u_particlePositions");
+    //ssfr normal program
+    surfaceNormalProgram.surfaceDepthLocation = gl.getUniformLocation(surfaceNormalProgram, "uSurfaceDepthData");
+    surfaceNormalProgram.vertexCoordAttribute = gl.getAttribLocation(surfaceNormalProgram, "aVertexCoord");
+    surfaceNormalProgram.viewportSizeLocation = gl.getUniformLocation(surfaceNormalProgram, "uViewportSize");
+    surfaceNormalProgram.attributes.push(surfaceNormalProgram.vertexCoordAttribute);
+    gl.enableVertexAttribArray(surfaceNormalProgram.vertexCoordAttribute);
 
+    surfaceNormalProgram.pMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uPMatrix");
 
     // Physics program
     physicsProgram.particlePositionDataLocation = gl.getUniformLocation(physicsProgram, "uParticlePositionData");
@@ -257,7 +262,7 @@ Simulation.prototype.initParticles = function() {
 
     for (i = 0; i < (n*4); i += 4) {
         ppd[i] = random()/4;
-        ppd[i + 1] = random()*3/4;
+        ppd[i + 1] = random()/2;
         ppd[i + 2] = random()/4;
         ppd[i + 3] = 1;
 
@@ -288,6 +293,11 @@ Simulation.prototype.initTextures = function() {
     this.particleDensityTexture = dt;
     var nt = initTexture(gl, this.neighborGridSide, null);
     this.neighborTexture = nt;
+
+   //initialize Surface rendering textures
+    var depthTexture = new Float32Array(gl.viewportWidth * gl.viewportHeight * 4);
+    var sdt = initScreenTexture(gl, depthTexture);
+    this.surfaceDepthTexture = sdt;
 };
 
 Simulation.prototype.initFramebuffers = function() {
@@ -301,12 +311,18 @@ Simulation.prototype.initFramebuffers = function() {
     this.particleDensityFramebuffer = pdfb;
     var nfb = initOutputFramebuffer(gl, this.neighborGridSide, this.neighborTexture);
     this.neighborFramebuffer = nfb;
+
+    //Create frame buffers for surface rendering
+    var sdfb = initScreenFramebuffer(gl, this.surfaceDepthTexture);
+    this.surfaceDepthFramebuffer = sdfb;
 };
 
 Simulation.prototype.initUniforms = function() {
     var gl = this.gl;
     // Set uniforms
     var renderProgram = this.renderProgram;
+    var surfaceDepthProgram = this.surfaceDepthProgram;
+    var surfaceNormalProgram = this.surfaceNormalProgram;
     var physicsProgram = this.physicsProgram;
     var velocityProgram = this.velocityProgram;
     var densityProgram = this.densityProgram;
@@ -317,12 +333,6 @@ Simulation.prototype.initUniforms = function() {
     // Initialize render program uniforms
     gl.useProgram(renderProgram);
     gl.uniform1f(renderProgram.gridSizeLocation, s);
-    if (this.ssfr) {
-        gl.uniform1f(renderProgram.particleRadiusLocation, this.particleRadius);
-        gl.uniform1f(renderProgram.particleScaleLocation, this.particleScale);
-        gl.uniform1f(renderProgram.nearLocation, this.clipNear);
-        gl.uniform1f(renderProgram.farLocation, this.clipFar);
-    }
     gl.uniform2f(renderProgram.u_parResolution, s, s);
     gl.uniform2f(renderProgram.u_spaceResolution, this.spaceSide, this.spaceSide);
     gl.uniform2f(renderProgram.u_ngridResolution, this.neighborGridSide, this.neighborGridSide);
@@ -331,8 +341,23 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform1f(renderProgram.u_ngrid_D, this.metagridSide);
     gl.uniform1f(renderProgram.u_numParticles, this.numParticles);
 
+    gl.uniformMatrix4fv(renderProgram.pMatrixUniform, false, this.pMatrix);
+    gl.uniformMatrix4fv(renderProgram.mvMatrixUniform, false, this.mvMatrix);
 
-    this.setMatrixUniforms();
+     // Initialize surface depth program uniforms
+    gl.useProgram(surfaceDepthProgram);
+    gl.uniform1f(surfaceDepthProgram.gridSizeLocation, s);
+    gl.uniform1f(surfaceDepthProgram.particleRadiusLocation, this.particleRadius);
+    gl.uniform1f(surfaceDepthProgram.particleScaleLocation, this.particleScale);
+    gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
+    gl.uniformMatrix4fv(surfaceDepthProgram.mvMatrixUniform, false, this.mvMatrix);
+
+    //this.setMatrixUniforms();
+
+    //initialize surface normal program uniforms
+    gl.useProgram(surfaceNormalProgram);
+    gl.uniformMatrix4fv(surfaceNormalProgram.pMatrixUniform, false, this.pMatrix);
+    gl.uniform2f(surfaceNormalProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
 
     // Initialize physics program uniforms
     gl.useProgram(physicsProgram);
@@ -393,10 +418,15 @@ Simulation.prototype.initUniforms = function() {
 Simulation.prototype.setMatrixUniforms = function() {
     var gl = this.gl;
     var renderProgram = this.renderProgram;
+    var surfaceDepthProgram = this.surfaceDepthProgram;
 
-    // Initialize matrix uniforms
+    gl.useProgram(renderProgram);
     gl.uniformMatrix4fv(renderProgram.pMatrixUniform, false, this.pMatrix);
     gl.uniformMatrix4fv(renderProgram.mvMatrixUniform, false, this.mvMatrix);
+
+    gl.useProgram(surfaceDepthProgram);
+    gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
+    gl.uniformMatrix4fv(surfaceDepthProgram.mvMatrixUniform, false, this.mvMatrix);
 };
 
 Simulation.prototype.updateVelocities = function() {
@@ -573,8 +603,73 @@ Simulation.prototype.updateNeighbors = function() {
     gl.depthFunc(gl.LESS);
 };
 
+Simulation.prototype.renderSurface = function() {
+     var gl = this.gl;
+
+     console.log("rendering surface");
+     console.log(gl.viewportWidth);
+     console.log(gl.viewportHeight);
+
+     var surfaceDepthProgram = this.surfaceDepthProgram;
+     var surfaceNormalProgram = this.surfaceNormalProgram;
+
+     // First calculate the surface Depths
+     enableAttributes(gl, surfaceDepthProgram);
+     gl.useProgram(surfaceDepthProgram);
+ 
+     // Set TEXTURE0 to the particle position texture
+     gl.uniform1i(surfaceDepthProgram.particlePositionDataLocation, 0);
+     gl.activeTexture(gl.TEXTURE0);
+     gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
+
+
+     gl.uniform1i(surfaceDepthProgram.surfaceDepthLocation, 1);
+     gl.activeTexture(gl.TEXTURE1);
+     gl.bindTexture(gl.TEXTURE_2D, this.surfaceDepthTexture);
+
+     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+
+     mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, this.clipNear, this.clipFar);
+     mat4.identity(this.mvMatrix);
+     mat4.translate(this.mvMatrix, this.mvMatrix,[-0.5, -0.5, -3.0]);
+     mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
+     gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
+     gl.uniformMatrix4fv(surfaceDepthProgram.mvMatrixUniform, false, this.mvMatrix);
+      
+     gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
+     gl.enableVertexAttribArray(surfaceDepthProgram.particleIndexAttribute);
+     gl.vertexAttribPointer(surfaceDepthProgram.particleIndexAttribute, 1, gl.FLOAT, false, 0, 0);
+
+     gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceDepthFramebuffer);
+     //gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+     gl.depthFunc(gl.LESS); 
+     gl.drawArrays(gl.POINTS, 0, this.numParticles);
+
+     // Then calculate the surface normals from depths
+     enableAttributes(gl, surfaceNormalProgram);
+     gl.useProgram(surfaceNormalProgram);
+
+     // Set TEXTURE0 to surface depth texture
+     gl.uniform1i(surfaceNormalProgram.surfaceDepthLocation, 0);
+     gl.activeTexture(gl.TEXTURE0);
+     gl.bindTexture(gl.TEXTURE_2D, this.surfaceDepthTexture);
+
+     gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
+     gl.vertexAttribPointer(surfaceNormalProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+
+     // render to screen
+     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        
+ };
+
 Simulation.prototype.drawScene = function() {
     var gl = this.gl;
+    console.log('rendering scene ahahahahaha');
+    console.log(this.renderProgram);
+    console.log(this.programs);
 
     var renderProgram = this.renderProgram;
     enableAttributes(gl, renderProgram);
@@ -609,22 +704,20 @@ Simulation.prototype.drawScene = function() {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
     gl.enableVertexAttribArray(renderProgram.particleIndexAttribute);
     gl.vertexAttribPointer(renderProgram.particleIndexAttribute, 1, gl.FLOAT, false, 0, 0);
+    gl.uniformMatrix4fv(renderProgram.pMatrixUniform, false, this.pMatrix);
+    gl.uniformMatrix4fv(renderProgram.mvMatrixUniform, false, this.mvMatrix);
 
-    this.setMatrixUniforms();
-    gl.enable(gl.DEPTH_TEST);
     //gl.enable(gl.BLEND);
-    //gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
     gl.drawArrays(gl.POINTS, 0, this.numParticles);
     gl.disable(gl.DEPTH_TEST);
     //gl.disable(gl.BLEND);
 };
 
 Simulation.prototype.setPrograms = function() {
-    if (this.ssfr) {
-        this.renderProgram = this.programs['ssfr-depth'];
-    } else {
-        this.renderProgram = this.programs['render'];
-    }
+    this.renderProgram = this.programs['render'];
+    this.surfaceDepthProgram = this.programs['ssfr-depth'];
+    this.surfaceNormalProgram = this.programs['ssfr-normal'];
     this.physicsProgram = this.programs['physics'];
     this.velocityProgram = this.programs['velocity'];
     this.neighborProgram = this.programs['neighbor'];

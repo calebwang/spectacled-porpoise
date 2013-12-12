@@ -17,8 +17,18 @@ var initGL = function(canvas) {
     gl = WebGLDebugUtils.makeDebugContext(gl);
     gl.viewportWidth = canvas.width;
     gl.viewportHeight = canvas.height;
+
+    if(!gl) {
+        throw "WebGL not initialized correctly";
+    }   
+
+    console.log("initGL");
     if (!gl.getExtension("OES_texture_float")) {
         throw "No OES_texture_float support";
+    }
+    if (!gl.getExtension("EXT_frag_depth")) {
+        //this is a draft extension
+        throw "NO EXT_frag_depth";
     }
     return gl;
 };
@@ -55,6 +65,17 @@ var initOutputFramebuffer = function(gl, gridSize, texture) {
     return fb;
 };
 
+// Create a frame buffer that renders to a texture
+var initScreenFramebuffer = function(gl, texture) {
+    var fb = gl.createFramebuffer();
+    fb.width = gl.viewportWidth;
+    fb.height = gl.viewportHeight;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return fb;
+};
+
 // Creates FLOAT RGBA textures
 // gridSize MUST be a power of 2
 var initTexture = function(gl, gridSize, data) {
@@ -74,7 +95,30 @@ var initTexture = function(gl, gridSize, data) {
         gl.TEXTURE_2D, 0, gl.RGBA, gridSize, gridSize,
         // border, data format, data type, pixels
         0, gl.RGBA, gl.FLOAT, data
-    );
+        );
+    return texture;
+};
+
+
+// Creates FLOAT RGBA textures
+var initScreenTexture = function(gl, data) {
+    // Create a texture for particle positions
+    var texture = gl.createTexture();
+
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    // Set texture data
+    gl.texImage2D(
+        // target, level, internal format, width, height
+        gl.TEXTURE_2D, 0, gl.RGBA, gl.viewportWidth, gl.viewportHeight,
+        // border, data format, data type, pixels
+        0, gl.RGBA, gl.FLOAT, data
+        );
     return texture;
 };
 
@@ -88,6 +132,7 @@ Programs.prototype.loadShaders = function(shaders, ready) {
     var self = this;
     for (var i = 0; i < shaders.length; i += 1) {
         var shader = shaders[i];
+        console.log(shader);
         var location = "glsl/" + shader;
         getRequests.push($.get(location + ".vert"), $.get(location + ".frag"));
     }
@@ -144,9 +189,11 @@ var enableAttributes = function(gl, program) {
 var setupControls = function(simulator) {
     var controls = new DAT.GUI({autoPlace: false});
     controls.add(simulator, 'gridSize', 100, 1000);
-    controls.add(simulator, 'viscosity', 0, 10);
+    controls.add(simulator, 'viscosity', 0, 50);
+    controls.add(simulator, 'particleRadius', 1, 5);
     controls.add(simulator, 'debug');
     controls.add(simulator, 'ssfr');
+    controls.add(simulator, 'normal');
     controls.add(simulator, 'auto');
     controls.add(simulator, 'reset');
     controls.add(simulator, 'mass');
@@ -202,8 +249,8 @@ var setMouseHandlers = function(canvas, simulator) {
 
 $(document).ready(function() {
     var canvas = initCanvas();
-    var gl = initGL(canvas);
-    var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'density'];
+    var gl = initGL(canvas);  
+    var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'density', 'ssfr-normal'];
     var programs = new Programs(gl);
     programs.loadShaders(shaders, function() {
         var simulator = new Simulation(gl, programs);
@@ -220,6 +267,8 @@ $(document).ready(function() {
         render = function() {
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LESS);
+
             console.log("rendering frame");
             if (simulator.auto) {
                 requestAnimFrame(render);
@@ -229,7 +278,12 @@ $(document).ready(function() {
             simulator.updateVelocities();
             simulator.updatePositions();
             simulator.updateNeighbors();
-            simulator.drawScene();
+            //simulator.drawScene();
+            if(simulator.ssfr) {
+                simulator.renderSurface();
+            } else {
+                simulator.drawScene();
+            }
         };
         render();
     });

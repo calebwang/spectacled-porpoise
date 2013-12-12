@@ -1,5 +1,5 @@
 #line 0 100
-precision mediump float;
+precision highp float;
 precision mediump int;
 
 attribute float aParticleIndex;
@@ -9,7 +9,7 @@ uniform float uParticleRadius;
 uniform float uParticleScale;
 
 uniform sampler2D uParticlePositionData;
-uniform sampler2D uParticleNeighborData;
+uniform sampler2D uSurfaceDepthData;
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
@@ -63,10 +63,8 @@ void main(void) {
     vec2 uv = getUVFromIndex(aParticleIndex);
     vec4 particle = texture2D(uParticlePositionData, uv);
 
-    //posEye = vec3(uMVMatrix * particle);
-    //particleDepth = vec3(uPMatrix * uMVMatrix * particle).z;
-    //float dist = length(posEye);
-    //gl_PointSize = uParticleRadius * (uParticleScale / dist);
-    gl_PointSize = 10.0;
+    posEye = vec3(uMVMatrix * particle);
+    particleDepth = length(posEye);
+    gl_PointSize = uParticleRadius * (uParticleScale / particleDepth);
     gl_Position = uPMatrix * uMVMatrix * particle;
 }
