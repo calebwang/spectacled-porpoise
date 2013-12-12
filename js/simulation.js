@@ -24,8 +24,8 @@ var Simulation = function(gl, programs) {
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
-    this.search = 3.5;
-    this.searchRadius = this.search/this.spaceSide;
+    this.search = 0.0546875;
+    this.searchRadius = this.search;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = -45.0/(Math.PI*Math.pow(this.searchRadius, 6));
     this.viscosity = 32.0;
@@ -34,7 +34,7 @@ var Simulation = function(gl, programs) {
     console.log(this.wPressureConstant);
 
     this.restDensity = 998.23;
-    this.mass = 0.02;
+    this.mass = 0.05;
 
     console.log(this.mass);
 
@@ -641,7 +641,7 @@ Simulation.prototype.renderSurface = function() {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
          }
          gl.clear(gl.COLOR_BUFFER_BIT);
-         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);        
+         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
      }
 
      // Then calculate the surface normals from depths
@@ -655,10 +655,10 @@ Simulation.prototype.renderSurface = function() {
 
          if(this.smooth) {
             gl.bindTexture(gl.TEXTURE_2D, this.surfaceSmoothTexture);
-         } else { 
+         } else {
             gl.bindTexture(gl.TEXTURE_2D, this.surfaceDepthTexture);
         }
-        
+
          gl.uniformMatrix4fv(surfaceNormalProgram.pMatrixUniform, false, this.pMatrix);
          gl.uniformMatrix4fv(surfaceNormalProgram.invPMatrixUniform, false, this.invPMatrix);
          gl.uniformMatrix4fv(surfaceNormalProgram.invMVMatrixUniform, false, this.invMVMatrix);
@@ -733,7 +733,7 @@ Simulation.prototype.setPrograms = function() {
 Simulation.prototype.reset = function() {
     this.numParticles = this.gridSize*this.gridSize;
     this.parGridSide = this.gridSize;
-    this.searchRadius = this.search/this.spaceSide;
+    this.searchRadius = this.search;
     this.setPrograms();
     this.initParticles();
     this.initBuffers();

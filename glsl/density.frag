@@ -66,7 +66,8 @@ float densityKernel(vec3 myPos, vec3 neighbor) {
 
 float computeDensityContribution(vec3 offset) {
     float density = 0.0;
-    vec3 pos = getPosition(vCoord).rgb + offset/uSpaceSide;
+    vec3 myPos = getPosition(vCoord).xyz;
+    vec3 pos = myPos + offset/uSpaceSide;
     vec3 clampedPos = clamp(pos, 0.0, 1.0);
     bvec3 compare = equal(pos, clampedPos);
     if (compare.x && compare.y && compare.z) {
@@ -74,16 +75,16 @@ float computeDensityContribution(vec3 offset) {
         vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
 
         if (vertexIndices.r > 0.0) {
-            density += max(densityKernel(pos, getPosition(textureCoord(vertexIndices.r)).rgb), 0.0);
+            density += max(densityKernel(myPos, getPosition(textureCoord(vertexIndices.r)).xyz), 0.0);
         }
         if (vertexIndices.g > 0.0) {
-            density += max(densityKernel(pos, getPosition(textureCoord(vertexIndices.g)).rgb), 0.0);
+            density += max(densityKernel(myPos, getPosition(textureCoord(vertexIndices.g)).xyz), 0.0);
         }
         if (vertexIndices.b > 0.0) {
-            density += max(densityKernel(pos, getPosition(textureCoord(vertexIndices.b)).rgb), 0.0);
+            density += max(densityKernel(myPos, getPosition(textureCoord(vertexIndices.b)).xyz), 0.0);
         }
         if (vertexIndices.a > 0.0) {
-            density += max(densityKernel(pos, getPosition(textureCoord(vertexIndices.a)).rgb), 0.0);
+            density += max(densityKernel(myPos, getPosition(textureCoord(vertexIndices.a)).xyz), 0.0);
         }
         if (density < 0.0) {
             return 0.0;
@@ -93,13 +94,6 @@ float computeDensityContribution(vec3 offset) {
 }
 
 void main(void) {
-    // Get the 3D particle position corrresponding to the particle index
-    // by transforming from 1D to 2D buffer indices
-    vec3 particlePosition = getPosition(vCoord).rgb;
-    // // Save the voxel position into gl_Position
-    vec2 p = voxelIndex(particlePosition) + 0.5;
-    //vec2 p = particlePosition.rg + 0.5;
-
     float density = 0.0;
     for (int i = 0; i < 27; i++) {
         density += computeDensityContribution(uNeighborVoxels[i]);
