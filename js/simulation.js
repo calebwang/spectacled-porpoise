@@ -147,7 +147,7 @@ Simulation.prototype.initShaders = function() {
     surfaceNormalProgram.vertexCoordAttribute = gl.getAttribLocation(surfaceNormalProgram, "aVertexCoord");
     surfaceNormalProgram.attributes.push(surfaceNormalProgram.vertexCoordAttribute);
     gl.enableVertexAttribArray(surfaceNormalProgram.vertexCoordAttribute);
-    
+
     surfaceNormalProgram.pMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uPMatrix");
     surfaceNormalProgram.invPMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uInvPMatrix");
     surfaceNormalProgram.invMVMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uInvMVMatrix");
@@ -155,7 +155,6 @@ Simulation.prototype.initShaders = function() {
     // Physics program
     physicsProgram.particlePositionDataLocation = gl.getUniformLocation(physicsProgram, "uParticlePositionData");
     physicsProgram.particleVelocityDataLocation = gl.getUniformLocation(physicsProgram, "uParticleVelocityData");
-    physicsProgram.viewportSizeLocation = gl.getUniformLocation(physicsProgram, "uViewportSize");
     physicsProgram.gridSizeLocation = gl.getUniformLocation(physicsProgram, "uGridSize");
 
     physicsProgram.vertexIndexAttribute = gl.getAttribLocation(physicsProgram, "aVertexIndex");
@@ -184,40 +183,30 @@ Simulation.prototype.initShaders = function() {
     velocityProgram.viscosityLocation = gl.getUniformLocation(velocityProgram, "uViscosity");
     velocityProgram.restDensityLocation = gl.getUniformLocation(velocityProgram, "uRestDensity");
 
-
     velocityProgram.u_ngridResolution = gl.getUniformLocation(velocityProgram, "u_ngrid_resolution");
     velocityProgram.u_ngrid_L = gl.getUniformLocation(velocityProgram, "u_ngrid_L");
     velocityProgram.u_ngrid_D = gl.getUniformLocation(velocityProgram, "u_ngrid_D");
-    console.log(velocityProgram);
 
 
     // Density program
     densityProgram.particlePositionDataLocation = gl.getUniformLocation(densityProgram, "uParticlePositionData");
-    densityProgram.particleVelocityDataLocation = gl.getUniformLocation(densityProgram, "uParticleVelocityData");
-    densityProgram.particleDensityDataLocation = gl.getUniformLocation(densityProgram, "uParticleDensityData");
     densityProgram.particleNeighborDataLocation = gl.getUniformLocation(densityProgram, "uParticleNeighborData");
     //maximum search distance
     densityProgram.searchRadiusLocation = gl.getUniformLocation(densityProgram, "uSearchRadius");
 
     densityProgram.spaceSideLocation = gl.getUniformLocation(densityProgram, "uSpaceSide");
-    densityProgram.viewportSizeLocation = gl.getUniformLocation(densityProgram, "uViewportSize");
     densityProgram.gridSizeLocation = gl.getUniformLocation(densityProgram, "uGridSize");
     densityProgram.massLocation = gl.getUniformLocation(densityProgram, "uMass");
     densityProgram.weightConstLocation = gl.getUniformLocation(densityProgram, "uWeightConstant");
 
-    densityProgram.vertexCoordAttribute = gl.getAttribLocation(densityProgram, "aVertexCoord");
-    console.log(densityProgram.vertexCoordAttribute);
-    densityProgram.attributes.push(densityProgram.vertexCoordAttribute);
-    gl.enableVertexAttribArray(densityProgram.vertexCoordAttribute);
+    densityProgram.vertexIndexAttribute = gl.getAttribLocation(densityProgram, "aVertexIndex");
+    densityProgram.attributes.push(densityProgram.vertexIndexAttribute);
+    gl.enableVertexAttribArray(densityProgram.vertexIndexAttribute);
 
-    densityProgram.spaceSideLocation = gl.getUniformLocation(densityProgram, "uSpaceSide");
-
+    densityProgram.neighborVoxelsLocation = gl.getUniformLocation(densityProgram, "uNeighborVoxels");
     densityProgram.u_ngridResolution = gl.getUniformLocation(densityProgram, "u_ngrid_resolution");
-    densityProgram.u_diameter = gl.getUniformLocation(densityProgram, "u_particleDiameter");
     densityProgram.u_ngrid_L = gl.getUniformLocation(densityProgram, "u_ngrid_L");
     densityProgram.u_ngrid_D = gl.getUniformLocation(densityProgram, "u_ngrid_D");
-    densityProgram.u_numParticles = gl.getUniformLocation(densityProgram, "u_numParticles");
-    densityProgram.u_particlePositions = gl.getUniformLocation(densityProgram, "u_particlePositions");
 
     // Neighbor program
     neighborProgram.particleIndex = gl.getAttribLocation(neighborProgram, "a_particleIndex");
@@ -413,18 +402,14 @@ Simulation.prototype.initUniforms = function() {
     gl.useProgram(densityProgram);
     gl.uniform1f(densityProgram.spaceSideLocation, l);
     gl.uniform1f(densityProgram.weightConstLocation, this.weightConstant);
-    gl.uniform2f(densityProgram.viewportSizeLocation, s, s);
     gl.uniform1f(densityProgram.gridSizeLocation, s);
     gl.uniform1f(densityProgram.massLocation, this.mass);
     gl.uniform1f(densityProgram.searchRadiusLocation, this.searchRadius);
+    gl.uniform3fv(densityProgram.neighborVoxelsLocation, this.neighborVoxels);
 
-    gl.uniform2f(densityProgram.u_parResolution, s, s);
-    gl.uniform2f(densityProgram.u_spaceResolution, this.spaceSide, this.spaceSide);
     gl.uniform2f(densityProgram.u_ngridResolution, this.neighborGridSide, this.neighborGridSide);
-    gl.uniform1f(densityProgram.u_diameter, this.particleDiameter);
     gl.uniform1f(densityProgram.u_ngrid_L, this.metagridUnit);
     gl.uniform1f(densityProgram.u_ngrid_D, this.metagridSide);
-    gl.uniform1f(densityProgram.u_numParticles, this.numParticles);
 
 
     // Initialize neighbor program uniforms
@@ -472,7 +457,6 @@ Simulation.prototype.updateVelocities = function() {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particleVelocityFramebuffer);
     gl.drawArrays(gl.POINTS, 0, this.parGridSide*this.parGridSide);
-    //gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 };
 
 Simulation.prototype.updatePositions = function() {
@@ -487,7 +471,6 @@ Simulation.prototype.updatePositions = function() {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
 
-
     // Set TEXTURE1 to the particle velocity texture
     gl.uniform1i(physicsProgram.particleVelocityDataLocation, 1);
     gl.activeTexture(gl.TEXTURE1);
@@ -495,16 +478,12 @@ Simulation.prototype.updatePositions = function() {
 
     gl.viewport(0, 0, this.parGridSide, this.parGridSide);
 
-    //gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
-    //gl.vertexAttribPointer(physicsProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
-
     gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
     gl.enableVertexAttribArray(physicsProgram.vertexIndexAttribute);
     gl.vertexAttribPointer(physicsProgram.vertexIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particlePositionFramebuffer);
     gl.drawArrays(gl.POINTS, 0, this.parGridSide*this.parGridSide);
-    //gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 };
 
 Simulation.prototype.updateDensities = function() {
@@ -518,25 +497,18 @@ Simulation.prototype.updateDensities = function() {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
 
-    gl.uniform1i(densityProgram.particleVelocityDataLocation, 1);
+    gl.uniform1i(densityProgram.particleNeighborDataLocation, 1);
     gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, this.particleVelocityTexture);
-
-    gl.uniform1i(densityProgram.particleDensityDataLocation, 2);
-    gl.activeTexture(gl.TEXTURE2);
-    gl.bindTexture(gl.TEXTURE_2D, this.particleDensityTexture);
-
-    gl.uniform1i(densityProgram.particleNeighborDataLocation, 3);
-    gl.activeTexture(gl.TEXTURE3);
     gl.bindTexture(gl.TEXTURE_2D, this.neighborTexture);
 
     gl.viewport(0, 0, this.parGridSide, this.parGridSide);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
-    gl.vertexAttribPointer(densityProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
+    gl.enableVertexAttribArray(densityProgram.vertexIndexAttribute);
+    gl.vertexAttribPointer(densityProgram.vertexIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particleDensityFramebuffer);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.drawArrays(gl.POINTS, 0, this.parGridSide*this.parGridSide);
 };
 
 Simulation.prototype.updateNeighbors = function() {
@@ -592,11 +564,6 @@ Simulation.prototype.updateNeighbors = function() {
     gl.colorMask(false, false, false, true);
     gl.clear(gl.STENCIL_BUFFER_BIT);
     gl.drawArrays(gl.POINTS, 0, n);
-
-    // var output = new Uint8Array(s * s *4);
-    // gl.readPixels(0, 0, s, s, gl.RGBA, gl.UNSIGNED_BYTE, output);
-    // console.log(output);
-    // END
 
     // Clean up
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);

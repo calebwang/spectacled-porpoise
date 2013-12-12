@@ -6,7 +6,6 @@ attribute float aVertexIndex;
 uniform float uGridSize;
 
 varying vec2 vCoord;
-varying float vIndex;
 
 vec2 textureCoord(float particleNumber) {
     float interval = 1.0/uGridSize;
@@ -24,5 +23,4 @@ void main(void) {
     gl_Position = vec4(clipSpace(texCoord), 0.0, 1.0);
     gl_PointSize = 1.0;
     vCoord = texCoord;
-    vIndex = aVertexIndex;
 }
