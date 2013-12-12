@@ -20,7 +20,7 @@ var initGL = function(canvas) {
 
     if(!gl) {
         throw "WebGL not initialized correctly";
-    }   
+    }
 
     console.log("initGL");
     if (!gl.getExtension("OES_texture_float")) {
@@ -249,7 +249,7 @@ var setMouseHandlers = function(canvas, simulator) {
 
 $(document).ready(function() {
     var canvas = initCanvas();
-    var gl = initGL(canvas);  
+    var gl = initGL(canvas);
     var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'density', 'ssfr-normal'];
     var programs = new Programs(gl);
     programs.loadShaders(shaders, function() {

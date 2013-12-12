@@ -18,7 +18,7 @@ var Simulation = function(gl, programs) {
     // In each direction
     this.spaceSide = 64; // The length of a dimension in world space
     this.particleScale = 100.0;
-    
+
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
@@ -61,7 +61,7 @@ var Simulation = function(gl, programs) {
     var rotationMatrix = this.rotationMatrix = mat4.create();
     mat4.identity(rotationMatrix);
     //set up a nicer default view
-    mat4.rotateY(rotationMatrix, rotationMatrix, Math.PI/4); 
+    mat4.rotateY(rotationMatrix, rotationMatrix, Math.PI/4);
 
     // Create quad vertices
     var viewportQuadVertices = new Float32Array([
@@ -616,7 +616,7 @@ Simulation.prototype.renderSurface = function() {
      // First calculate the surface Depths
      enableAttributes(gl, surfaceDepthProgram);
      gl.useProgram(surfaceDepthProgram);
- 
+
      // Set TEXTURE0 to the particle position texture
      gl.uniform1i(surfaceDepthProgram.particlePositionDataLocation, 0);
      gl.activeTexture(gl.TEXTURE0);
@@ -635,7 +635,7 @@ Simulation.prototype.renderSurface = function() {
      mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
      gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
      gl.uniformMatrix4fv(surfaceDepthProgram.mvMatrixUniform, false, this.mvMatrix);
-      
+
      gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
      gl.enableVertexAttribArray(surfaceDepthProgram.particleIndexAttribute);
      gl.vertexAttribPointer(surfaceDepthProgram.particleIndexAttribute, 1, gl.FLOAT, false, 0, 0);
@@ -643,7 +643,7 @@ Simulation.prototype.renderSurface = function() {
      gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceDepthFramebuffer);
      //gl.bindFramebuffer(gl.FRAMEBUFFER, null);
      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-     gl.depthFunc(gl.LESS); 
+     gl.depthFunc(gl.LESS);
      gl.drawArrays(gl.POINTS, 0, this.numParticles);
 
      // Then calculate the surface normals from depths
@@ -662,7 +662,7 @@ Simulation.prototype.renderSurface = function() {
      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        
+
  };
 
 Simulation.prototype.drawScene = function() {

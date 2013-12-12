@@ -185,7 +185,7 @@ void main(void) {
     vec3 contact = contactLocal + center;
 
     float cDist = length(contactLocal + center - pos);
-    
+
     if (cDist > 0.0 && length(vel) > 0.0) {
         vec3 normal = normalize(sign(contactLocal - local));
         float rest = min(cDist/(0.005*length(vel)), 1.2);
