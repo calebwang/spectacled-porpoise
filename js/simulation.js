@@ -29,7 +29,7 @@ var Simulation = function(gl, programs) {
     this.searchRadius = this.search/this.spaceSide;
     this.weightConstant = 315.0/(64*Math.PI*Math.pow(this.searchRadius, 9));
     this.wPressureConstant = -45.0/(Math.PI*Math.pow(this.searchRadius, 6));
-    this.viscosity = 10.0;
+    this.viscosity = 32.0;
 
     console.log(this.weightConstant);
     console.log(this.wPressureConstant);
