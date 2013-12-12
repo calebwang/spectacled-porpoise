@@ -189,7 +189,7 @@ void main(void) {
     if (cDist > 0.0 && length(vel) > 0.0) {
         vec3 normal = normalize(sign(contactLocal - local));
         float rest = min(cDist/(0.005*length(vel)), 1.2);
-        vel -= (1.0 + 0.8) * dot(vel, normal) * normal;
+        vel -= (1.0 + rest) * dot(vel, normal) * normal;
     }
 
     vel += 0.005*(force3);
