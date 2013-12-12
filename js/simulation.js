@@ -50,6 +50,8 @@ var Simulation = function(gl, programs) {
 
     var mvMatrix = this.mvMatrix = mat4.create();
     var pMatrix = this.pMatrix = mat4.create();
+    var invMVMatrix = this.invMVMatrix = mat4.create();
+    var invPMatrix = this.invPMatrix = mat4.create();
     mat4.identity(pMatrix);
     var rotationMatrix = this.rotationMatrix = mat4.create();
     mat4.identity(rotationMatrix);
@@ -136,6 +138,8 @@ Simulation.prototype.initShaders = function() {
     gl.enableVertexAttribArray(surfaceNormalProgram.vertexCoordAttribute);
 
     surfaceNormalProgram.pMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uPMatrix");
+    surfaceNormalProgram.invPMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uInvPMatrix");
+    surfaceNormalProgram.invMVMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uInvMVMatrix");
 
     // Physics program
     physicsProgram.particlePositionDataLocation = gl.getUniformLocation(physicsProgram, "uParticlePositionData");
@@ -312,6 +316,14 @@ Simulation.prototype.initFramebuffers = function() {
     //Create frame buffers for surface rendering
     var sdfb = initScreenFramebuffer(gl, this.surfaceDepthTexture);
     this.surfaceDepthFramebuffer = sdfb;
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, sdfb);
+    var depth_buffer = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depth_buffer);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, gl.viewportWidth, gl.viewportHeight);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.surfaceDepthTexture, 0);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depth_buffer);
+
 };
 
 Simulation.prototype.initUniforms = function() {
@@ -348,8 +360,6 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform1f(surfaceDepthProgram.particleScaleLocation, this.particleScale);
     gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
     gl.uniformMatrix4fv(surfaceDepthProgram.mvMatrixUniform, false, this.mvMatrix);
-
-    //this.setMatrixUniforms();
 
     //initialize surface normal program uniforms
     gl.useProgram(surfaceNormalProgram);
@@ -407,20 +417,6 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform1f(neighborProgram.u_ngrid_D, this.metagridSide);
     gl.uniform1f(neighborProgram.u_numParticles, this.numParticles);
 
-};
-
-Simulation.prototype.setMatrixUniforms = function() {
-    var gl = this.gl;
-    var renderProgram = this.renderProgram;
-    var surfaceDepthProgram = this.surfaceDepthProgram;
-
-    gl.useProgram(renderProgram);
-    gl.uniformMatrix4fv(renderProgram.pMatrixUniform, false, this.pMatrix);
-    gl.uniformMatrix4fv(renderProgram.mvMatrixUniform, false, this.mvMatrix);
-
-    gl.useProgram(surfaceDepthProgram);
-    gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
-    gl.uniformMatrix4fv(surfaceDepthProgram.mvMatrixUniform, false, this.mvMatrix);
 };
 
 Simulation.prototype.updateVelocities = function() {
@@ -617,9 +613,12 @@ Simulation.prototype.renderSurface = function() {
      gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 
      mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, this.clipNear, this.clipFar);
+     mat4.invert(this.invPMatrix, this.pMatrix);
      mat4.identity(this.mvMatrix);
      mat4.translate(this.mvMatrix, this.mvMatrix,[-0.5, -0.5, -3.0]);
      mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
+     mat4.invert(this.invMVMatrix, this.mvMatrix);
+
      gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
      gl.uniformMatrix4fv(surfaceDepthProgram.mvMatrixUniform, false, this.mvMatrix);
 
@@ -632,7 +631,7 @@ Simulation.prototype.renderSurface = function() {
      } else {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
      }
-     //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
      gl.clear(gl.COLOR_BUFFER_BIT);
      gl.drawArrays(gl.POINTS, 0, this.numParticles);
 
@@ -640,19 +639,22 @@ Simulation.prototype.renderSurface = function() {
      if(this.normal) {
          enableAttributes(gl, surfaceNormalProgram);
          gl.useProgram(surfaceNormalProgram);
-         gl.enable(DEPTH_TEST);
 
          // Set TEXTURE0 to surface depth texture
          gl.uniform1i(surfaceNormalProgram.surfaceDepthLocation, 0);
          gl.activeTexture(gl.TEXTURE0);
          gl.bindTexture(gl.TEXTURE_2D, this.surfaceDepthTexture);
+        
+         gl.uniformMatrix4fv(surfaceNormalProgram.pMatrixUniform, false, this.pMatrix);
+         gl.uniformMatrix4fv(surfaceNormalProgram.invPMatrixUniform, false, this.invPMatrix);
+         gl.uniformMatrix4fv(surfaceNormalProgram.invMVMatrixUniform, false, this.invMVMatrix);
 
          gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
          gl.vertexAttribPointer(surfaceNormalProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
 
          // render to screen
          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+         gl.clear(gl.COLOR_BUFFER_BIT);
          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
  };
