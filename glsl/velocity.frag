@@ -22,6 +22,7 @@ uniform float uGridSize;
 uniform float uSpaceSide;
 uniform float uRestDensity;
 
+varying vec2 vCoord;
 varying float vIndex;
 
 uniform vec3 uNeighborVoxels[27];
@@ -66,53 +67,53 @@ vec2 voxelIndex(vec3 pos) {
     return n_pos;
 }
 
-vec3 pressureKernel(vec3 dist) {
+vec3 pressureKernel(vec3 myPos, vec3 neighbor) {
     vec3 result = vec3(0.0, 0.0, 0.0);
-    float d = length(dist);
+    float d = distance(myPos, neighbor);
 
-    if (d > 0.0 && d < uSearchRadius) {
+    if (d < uSearchRadius) {
         float x = uSearchRadius - d;
-        result = uPressureConstant*x*x*normalize(dist);
+        result = uPressureConstant*x*x*normalize(neighbor - myPos);
     }
     return result;
 }
 
-float viscosityKernel(vec3 dist) {
-    float res = 0.0;
-    float d = length(dist);
+float viscosityKernel(vec3 myPos, vec3 neighbor) {
+    float result = 0.0;
+    float d = distance(myPos, neighbor);
 
-    if (d > 0.0 && d < uSearchRadius) {
+    if (d < uSearchRadius) {
         float x = uSearchRadius - d;
-        res = -uPressureConstant*x;
+        result = -uPressureConstant*x;
     }
-    return res;
+    return result;
 }
 
 vec3 computeForce(float index) {
-    vec2 coord = textureCoord(vIndex);
-    vec3 dist = getPosition(textureCoord(index)).rgb - getPosition(coord).rgb;
+    vec3 myPos = getPosition(vCoord).xyz;
+    float myDensity = getDensity(vCoord).r;
+    float myPressure = 1.0*(myDensity - uRestDensity);
+    vec3 myVelocity = getVelocity(vCoord).xyz;
 
-    float myDensity = getDensity(coord).r;
+    vec3 neighbor = getPosition(textureCoord(index)).xyz;
     float density = getDensity(textureCoord(index)).r;
     float pressure = 1.0*(density - uRestDensity);
-    float myPressure = 1.0*(density - uRestDensity);
-    //pressure = (pow(density/uRestDensity, 7.0) - 1.0);
-    //myPressure = (pow(myDensity/uRestDensity, 7.0) - 1.0);
+    vec3 velocity = getVelocity(textureCoord(index)).xyz;
+
     float c = (pressure + myPressure)/2.0;
-    vec3 force1 = c*uMass*pressureKernel(dist)/uRestDensity;
+    vec3 force1 = c*uMass*pressureKernel(myPos, neighbor)/uRestDensity;
 
     if (myDensity <= 0.0) {
         return vec3(0.0);
     }
-    vec3 vDiff = getVelocity(textureCoord(index)).rgb - getVelocity(coord).rgb;
-    force1 += uViscosity*vDiff*uMass*viscosityKernel(dist)/uRestDensity;
+    vec3 vDiff = velocity - myVelocity;
+    force1 += uViscosity*vDiff*uMass*viscosityKernel(myPos, neighbor)/uRestDensity;
     return force1;
 }
 
 vec3 computeForceContribution(vec3 offset) {
     vec3 force2 = vec3(0.0, 0.0, 0.0);
-    vec2 coord = textureCoord(vIndex);
-    vec3 pos = getPosition(coord).rgb + offset/uSpaceSide;
+    vec3 pos = getPosition(vCoord).xyz + offset/uSpaceSide;
 
     if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
         if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
@@ -137,10 +138,9 @@ vec3 computeForceContribution(vec3 offset) {
 }
 
 void main(void) {
-    vec2 coord = textureCoord(vIndex);
-    vec3 vel = getVelocity(coord).xyz;
-    vec3 pos = getPosition(coord).xyz;
-    float density = getDensity(coord).x;
+    vec3 vel = getVelocity(vCoord).xyz;
+    vec3 pos = getPosition(vCoord).xyz;
+    float density = getDensity(vCoord).x;
 
     vec3 force3 = vec3(0.0, 0.0, 0.0);
     for (int i = 0; i < 27; i++) {
