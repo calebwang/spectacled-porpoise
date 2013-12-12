@@ -1,5 +1,5 @@
 #line 0 100
-precision mediump float;
+precision highp float;
 precision mediump int;
 
 attribute float aParticleIndex;
@@ -9,6 +9,7 @@ uniform float uParticleRadius;
 uniform float uParticleScale;
 
 uniform sampler2D uParticlePositionData;
+uniform sampler2D uSurfaceDepthData;
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 

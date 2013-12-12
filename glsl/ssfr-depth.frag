@@ -1,7 +1,8 @@
 #extension GL_EXT_frag_depth: enable
-precision mediump float;
+precision highp float;
 
 uniform sampler2D uParticlePositionData;
+uniform sampler2D uSurfaceDepthData;
 
 uniform float uParticleRadius;
 uniform float uParticleScale;

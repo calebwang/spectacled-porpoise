@@ -68,8 +68,8 @@ var initOutputFramebuffer = function(gl, gridSize, texture) {
 // Create a frame buffer that renders to a texture
 var initScreenFramebuffer = function(gl, texture) {
     var fb = gl.createFramebuffer();
-    fb.width = gl.drawingBufferWidth;
-    fb.height = gl.drawingBufferHeight;
+    fb.width = gl.viewportWidth;
+    fb.height = gl.viewportHeight;
     gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -115,7 +115,7 @@ var initScreenTexture = function(gl, data) {
     // Set texture data
     gl.texImage2D(
         // target, level, internal format, width, height
-        gl.TEXTURE_2D, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight,
+        gl.TEXTURE_2D, 0, gl.RGBA, gl.viewportWidth, gl.viewportHeight,
         // border, data format, data type, pixels
         0, gl.RGBA, gl.FLOAT, data
         );

@@ -1,5 +1,5 @@
 #line 0 100
-precision mediump float;
+precision highp float;
 precision mediump int;
 
 attribute vec2 aVertexCoord;
