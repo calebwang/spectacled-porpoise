@@ -64,11 +64,7 @@ void main(void) {
     vec3 pos = particle.rgb;
     vec2 nIndex = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
     vec4 ind = texture2D(uParticleNeighborData, nIndex);
-    if (ind.r == aParticleIndex || ind.g == aParticleIndex || ind.b == aParticleIndex || ind.a == aParticleIndex) {
-        gl_Position = uPMatrix * uMVMatrix * particle;
-    } else {
-        gl_Position = uPMatrix * uMVMatrix * (particle - vec4(1.0, 0.0, 0.0, 0.0));
-    }
+    gl_Position = uPMatrix * uMVMatrix * particle;
 
     gl_PointSize = 3.0;
 }

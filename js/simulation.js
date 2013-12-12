@@ -597,6 +597,9 @@ Simulation.prototype.renderSurface = function() {
      var surfaceDepthProgram = this.surfaceDepthProgram;
      var surfaceNormalProgram = this.surfaceNormalProgram;
 
+     gl.enable(gl.DEPTH_TEST);
+     gl.depthFunc(gl.LESS);
+
      // First calculate the surface Depths
      enableAttributes(gl, surfaceDepthProgram);
      gl.useProgram(surfaceDepthProgram);
@@ -624,8 +627,8 @@ Simulation.prototype.renderSurface = function() {
      gl.enableVertexAttribArray(surfaceDepthProgram.particleIndexAttribute);
      gl.vertexAttribPointer(surfaceDepthProgram.particleIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
-     gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceDepthFramebuffer);
-     //gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+     //gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceDepthFramebuffer);
+     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
      gl.depthFunc(gl.LESS);
      gl.drawArrays(gl.POINTS, 0, this.numParticles);
@@ -643,9 +646,9 @@ Simulation.prototype.renderSurface = function() {
      gl.vertexAttribPointer(surfaceNormalProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
 
      // render to screen
-     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+     /*gl.bindFramebuffer(gl.FRAMEBUFFER, null);
      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);*/
 
  };
 
