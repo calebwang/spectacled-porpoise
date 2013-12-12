@@ -35,7 +35,7 @@ void main(void) {
     vec4 spherePosEye = vec4(posEye + (norm * uParticleRadius) / uParticleScale, 1.0);
     vec4 clipSpacePos = uPMatrix  * spherePosEye;
 
-    float normDepth = clipSpacePos.z;
+    float normDepth = clipSpacePos.z/2.0;
     gl_FragDepthEXT = normDepth;
     gl_FragColor = vec4(normDepth, normDepth, normDepth, 1.0);
 
