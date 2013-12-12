@@ -11,19 +11,13 @@ uniform float uSearchRadius;
 
 uniform float uPressureConstant;
 
-uniform vec2 u_partex_resolution;
-uniform vec2 u_space_resolution;
 uniform vec2 u_ngrid_resolution;
-
-uniform float u_particleDiameter;
 
 uniform float u_ngrid_L;
 uniform float u_ngrid_D;
 
-uniform float u_numParticles;
 uniform float uViscosity;
 
-uniform vec2 uViewportSize;
 uniform float uGridSize;
 uniform float uSpaceSide;
 uniform float uRestDensity;

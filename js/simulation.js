@@ -171,7 +171,6 @@ Simulation.prototype.initShaders = function() {
     velocityProgram.wPressureConstLocation = gl.getUniformLocation(velocityProgram, "uPressureConstant");
 
     velocityProgram.spaceSideLocation = gl.getUniformLocation(velocityProgram, "uSpaceSide");
-    velocityProgram.viewportSizeLocation = gl.getUniformLocation(velocityProgram, "uViewportSize");
     velocityProgram.gridSizeLocation = gl.getUniformLocation(velocityProgram, "uGridSize");
     velocityProgram.massLocation = gl.getUniformLocation(velocityProgram, "uMass");
     velocityProgram.viscosityLocation = gl.getUniformLocation(velocityProgram, "uViscosity");
@@ -179,11 +178,8 @@ Simulation.prototype.initShaders = function() {
 
 
     velocityProgram.u_ngridResolution = gl.getUniformLocation(velocityProgram, "u_ngrid_resolution");
-    velocityProgram.u_diameter = gl.getUniformLocation(velocityProgram, "u_particleDiameter");
     velocityProgram.u_ngrid_L = gl.getUniformLocation(velocityProgram, "u_ngrid_L");
     velocityProgram.u_ngrid_D = gl.getUniformLocation(velocityProgram, "u_ngrid_D");
-    velocityProgram.u_numParticles = gl.getUniformLocation(velocityProgram, "u_numParticles");
-    velocityProgram.u_particlePositions = gl.getUniformLocation(velocityProgram, "u_particlePositions");
 
 
     // Density program
@@ -367,7 +363,6 @@ Simulation.prototype.initUniforms = function() {
 
     // Initialize velocity program uniforms
     gl.useProgram(velocityProgram);
-    gl.uniform2f(velocityProgram.viewportSizeLocation, s, s);
     gl.uniform1f(velocityProgram.gridSizeLocation, s);
     gl.uniform1f(velocityProgram.wPressureConstLocation, this.wPressureConstant);
     gl.uniform1f(velocityProgram.massLocation, this.mass);
@@ -376,13 +371,11 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform1f(velocityProgram.restDensityLocation, this.restDensity);
     gl.uniform3fv(velocityProgram.neighborVoxelsLocation, this.neighborVoxels);
 
-    gl.uniform2f(velocityProgram.u_parResolution, s, s);
-    gl.uniform2f(velocityProgram.u_spaceResolution, this.spaceSide, this.spaceSide);
+    gl.uniform1f(velocityProgram.spaceSideLocation, this.spaceSide);
     gl.uniform2f(velocityProgram.u_ngridResolution, this.neighborGridSide, this.neighborGridSide);
     gl.uniform1f(velocityProgram.u_diameter, this.particleDiameter);
     gl.uniform1f(velocityProgram.u_ngrid_L, this.metagridUnit);
     gl.uniform1f(velocityProgram.u_ngrid_D, this.metagridSide);
-    gl.uniform1f(velocityProgram.u_numParticles, this.numParticles);
 
 
 
@@ -454,9 +447,6 @@ Simulation.prototype.updateVelocities = function() {
     gl.uniform1i(velocityProgram.particleNeighborDataLocation, 3);
     gl.activeTexture(gl.TEXTURE3);
     gl.bindTexture(gl.TEXTURE_2D, this.neighborTexture);
-
-
-    gl.uniform1f(velocityProgram.spaceSideLocation, this.spaceSide);
 
     gl.viewport(0, 0, this.parGridSide, this.parGridSide);
 
