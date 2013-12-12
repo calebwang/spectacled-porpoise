@@ -1,3 +1,4 @@
 *.ai
 .*.swp
 .DS_STORE
+.*.swo
