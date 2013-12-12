@@ -51,8 +51,8 @@ vec2 voxelIndex(vec3 pos) {
     return n_pos;
 }
 
-float densityKernel(vec3 distance) {
-    float dist = length(distance);
+float densityKernel(vec3 myPos, vec3 neighbor) {
+    float dist = distance(myPos, neighbor);
     float density = 0.0;
     float search = uSearchRadius;
     //smoothing kernel
@@ -67,26 +67,26 @@ float densityKernel(vec3 distance) {
 float computeDensityContribution(vec3 offset) {
     float density = 0.0;
     vec3 pos = getPosition(vCoord).rgb + offset/uSpaceSide;
-    if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
-        if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
-            vec2 voxel = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
-            vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
+    vec3 clampedPos = clamp(pos, 0.0, 1.0);
+    bvec3 compare = equal(pos, clampedPos);
+    if (compare.x && compare.y && compare.z) {
+        vec2 voxel = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
+        vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
 
-            if (vertexIndices.r > 0.0) {
-                density += max(densityKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.r)).rgb), 0.0);
-            }
-            if (vertexIndices.g > 0.0) {
-                density += max(densityKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.g)).rgb), 0.0);
-            }
-            if (vertexIndices.b > 0.0) {
-                density += max(densityKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.b)).rgb), 0.0);
-            }
-            if (vertexIndices.a > 0.0) {
-                density += max(densityKernel(pos - texture2D(uParticlePositionData, textureCoord(vertexIndices.a)).rgb), 0.0);
-            }
-            if (density < 0.0) {
-                return 0.0;
-            }
+        if (vertexIndices.r > 0.0) {
+            density += max(densityKernel(pos, getPosition(textureCoord(vertexIndices.r)).rgb), 0.0);
+        }
+        if (vertexIndices.g > 0.0) {
+            density += max(densityKernel(pos, getPosition(textureCoord(vertexIndices.g)).rgb), 0.0);
+        }
+        if (vertexIndices.b > 0.0) {
+            density += max(densityKernel(pos, getPosition(textureCoord(vertexIndices.b)).rgb), 0.0);
+        }
+        if (vertexIndices.a > 0.0) {
+            density += max(densityKernel(pos, getPosition(textureCoord(vertexIndices.a)).rgb), 0.0);
+        }
+        if (density < 0.0) {
+            return 0.0;
         }
     }
     return density;

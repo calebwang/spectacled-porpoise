@@ -117,24 +117,23 @@ vec3 computeForce(float index) {
 vec3 computeForceContribution(vec3 offset) {
     vec3 force2 = vec3(0.0, 0.0, 0.0);
     vec3 pos = getPosition(vCoord).xyz + offset/uSpaceSide;
+    vec3 clampedPos = clamp(pos, 0.0, 1.0);
+    bvec3 compare = equal(pos, clampedPos);
+    if (compare.x && compare.y && compare.z) {
+        vec2 voxel = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
+        vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
 
-    if (pos.x >= 0.0 && pos.y >= 0.0 && pos.z >= 0.0) {
-        if (pos.x <= 1.0 && pos.y <= 1.0 && pos.z <= 1.0) {
-            vec2 voxel = (voxelIndex(pos) + 0.5)/u_ngrid_resolution;
-            vec4 vertexIndices = texture2D(uParticleNeighborData, voxel);
-
-            if (vertexIndices.r > 0.0) {
-                force2 += computeForce(vertexIndices.r);
-            }
-            if (vertexIndices.g > 0.0) {
-                force2 += computeForce(vertexIndices.g);
-            }
-            if (vertexIndices.b > 0.0) {
-                force2 += computeForce(vertexIndices.b);
-            }
-            if (vertexIndices.a > 0.0) {
-                force2 += computeForce(vertexIndices.a);
-            }
+        if (vertexIndices.r > 0.0) {
+            force2 += computeForce(vertexIndices.r);
+        }
+        if (vertexIndices.g > 0.0) {
+            force2 += computeForce(vertexIndices.g);
+        }
+        if (vertexIndices.b > 0.0) {
+            force2 += computeForce(vertexIndices.b);
+        }
+        if (vertexIndices.a > 0.0) {
+            force2 += computeForce(vertexIndices.a);
         }
     }
     return force2;
