@@ -22,8 +22,8 @@ var Simulation = function(gl, programs) {
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
-    this.clipNear = 1.5;
-    this.clipFar = -3;
+    this.clipNear = 1.0;
+    this.clipFar = -2;
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
     this.search = 3.5;
     this.searchRadius = this.search/this.spaceSide;
@@ -171,6 +171,7 @@ Simulation.prototype.initShaders = function() {
     velocityProgram.massLocation = gl.getUniformLocation(velocityProgram, "uMass");
     velocityProgram.viscosityLocation = gl.getUniformLocation(velocityProgram, "uViscosity");
     velocityProgram.restDensityLocation = gl.getUniformLocation(velocityProgram, "uRestDensity");
+    velocityProgram.fluidLocation = gl.getUniformLocation(velocityProgram, "uFluid");
 
     //velocityProgram.vertexCoordAttribute = gl.getAttribLocation(velocityProgram, "aVertexCoord");
     //console.log(velocityProgram.vertexCoordAttribute);
@@ -260,10 +261,10 @@ Simulation.prototype.initParticles = function() {
         pid[i] = i;
     }
 
-    for (i = 0; i < (n*4); i += 4) {
-        ppd[i] = random()/4;
+    for (i = 0; i < (n*3); i += 4) {
+        ppd[i] = random();
         ppd[i + 1] = random()/2;
-        ppd[i + 2] = random()/4;
+        ppd[i + 2] = random();
         ppd[i + 3] = 1;
 
         pvd[i] = 0.0;//(random() * 2 - 1);
@@ -275,6 +276,24 @@ Simulation.prototype.initParticles = function() {
         pdd[i + 1] = 0.0;
         pdd[i + 2] = 0.0;
         pdd[i + 3] = 0.0;
+    }
+
+    for (; i < (n*4); i += 4) {
+        ppd[i] = random()/5 + 2/5;
+        ppd[i + 1] = random()/5 + 4/5;
+        ppd[i + 2] = random()/5 + 2/5;
+        ppd[i + 3] = 1;
+
+        pvd[i] = 0.0;//(random() * 2 - 1);
+        pvd[i + 1] = 0;//(random() * 2 - 1);
+        pvd[i + 2] = 0;// (random() * 2 - 1);
+        pvd[i + 3] = 1;
+
+        pdd[i] = 0.0;
+        pdd[i + 1] = 0.0;
+        pdd[i + 2] = 0.0;
+        pdd[i + 3] = 0.0;
+
     }
 
     console.log(this.particlePositionData);
@@ -456,6 +475,7 @@ Simulation.prototype.updateVelocities = function() {
 
 
     gl.uniform1f(velocityProgram.spaceSideLocation, this.spaceSide);
+    gl.uniform1i(velocityProgram.fluidLocation, 1);
 
     gl.viewport(0, 0, this.parGridSide, this.parGridSide);
 
@@ -464,7 +484,10 @@ Simulation.prototype.updateVelocities = function() {
     gl.vertexAttribPointer(velocityProgram.vertexIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particleVelocityFramebuffer);
-    gl.drawArrays(gl.POINTS, 0, this.parGridSide*this.parGridSide);
+    gl.drawArrays(gl.POINTS, 0, this.parGridSide*this.parGridSide*3/4);
+
+    gl.uniform1i(velocityProgram.fluidLocation, 0);
+    gl.drawArrays(gl.POINTS, this.parGridSide*this.parGridSide*3/4, this.parGridSide*this.parGridSide/4);
     //gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 };
 

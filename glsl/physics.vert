@@ -38,7 +38,7 @@ void main(void) {
     gl_PointSize = 1.0;
     vec4 color = vec4(getPosition(texCoord), 1.0) + 0.01*vec4(getVelocity(texCoord), 1.0);
     if (color.y < 0.0) {
-        color.y = 0.0;
+        color.y = -100.0;
     }
     vColor = color;
 }

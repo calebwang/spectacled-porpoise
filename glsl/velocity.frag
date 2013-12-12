@@ -28,6 +28,8 @@ uniform float uGridSize;
 uniform float uSpaceSide;
 uniform float uRestDensity;
 
+uniform bool uFluid;
+
 varying float vIndex;
 vec2 textureCoord(float particleNumber) {
     float interval = 1.0/uGridSize;
@@ -186,13 +188,15 @@ void main(void) {
 
     float cDist = length(contactLocal + center - pos);
     
-    if (cDist > 0.0 && length(vel) > 0.0) {
+    if (uFluid && cDist > 0.0 && length(vel) > 0.0) {
         vec3 normal = normalize(sign(contactLocal - local));
         float rest = min(cDist/(0.005*length(vel)), 1.2);
         vel -= (1.0 + rest) * dot(vel, normal) * normal;
     }
 
-    vel += 0.005*(force3);
+    if (uFluid) {
+        vel += 0.005*(force3);
+    }
 
     vel += 0.005*vec3(0.0, -9.8, 0.0);
 
