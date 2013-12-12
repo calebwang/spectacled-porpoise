@@ -52,7 +52,7 @@ var Simulation = function(gl, programs) {
 
     var renderbuffer = this.neighborRenderbuffer = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.neighborGridSide, this.neighborGridSide);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL, this.neighborGridSide, this.neighborGridSide);
     gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 
     var mvMatrix = this.mvMatrix = mat4.create();
@@ -549,7 +549,7 @@ Simulation.prototype.updateNeighbors = function() {
     // We'll be doing this computation in four passes
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.neighborFramebuffer);
     gl.bindRenderbuffer(gl.RENDERBUFFER, this.neighborRenderbuffer);
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.neighborRenderbuffer);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, this.neighborRenderbuffer);
 
     gl.viewport(0, 0, s, s);
     gl.clearColor(0.0, 0.0, 0.0, 0.0);

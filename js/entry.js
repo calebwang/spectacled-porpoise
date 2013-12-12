@@ -190,7 +190,7 @@ var setupControls = function(simulator) {
     var controls = new DAT.GUI({autoPlace: false});
     controls.add(simulator, 'gridSize', 100, 1000);
     controls.add(simulator, 'viscosity', 0, 50);
-    controls.add(simulator, 'particleRadius', 1, 5);
+    controls.add(simulator, 'particleRadius', 0.01, 0.5);
     controls.add(simulator, 'debug');
     controls.add(simulator, 'ssfr');
     controls.add(simulator, 'normal');
