@@ -147,8 +147,6 @@ void main(void) {
         force3 += computeForceContribution(uNeighborVoxels[i]);
     }
 
-    force3 = force3/density;
-
     vec3 center = vec3(0.5);
     vec3 local = pos - center;
     vec3 box = vec3(0.48);
@@ -163,9 +161,9 @@ void main(void) {
         vel -= (1.0 + rest) * dot(vel, normal) * normal;
     }
 
-    vel += 0.005*(force3);
+    vel += (force3/density)/120.0;
 
-    vel += 0.005*vec3(0.0, -9.8, 0.0);
+    vel += vec3(0.0, -9.8, 0.0)/120.0;
 
     gl_FragColor = vec4(vel, 1.0);
 }
