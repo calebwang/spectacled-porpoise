@@ -165,6 +165,7 @@ Simulation.prototype.initShaders = function() {
     velocityProgram.gridSizeLocation = gl.getUniformLocation(velocityProgram, "uGridSize");
     velocityProgram.massLocation = gl.getUniformLocation(velocityProgram, "uMass");
     velocityProgram.viscosityLocation = gl.getUniformLocation(velocityProgram, "uViscosity");
+    velocityProgram.restDensityLocation = gl.getUniformLocation(velocityProgram, "uRestDensity");
 
     //velocityProgram.vertexCoordAttribute = gl.getAttribLocation(velocityProgram, "aVertexCoord");
     //console.log(velocityProgram.vertexCoordAttribute);
@@ -256,7 +257,7 @@ Simulation.prototype.initParticles = function() {
 
     for (i = 0; i < (n*4); i += 4) {
         ppd[i] = random()/4;
-        ppd[i + 1] = random()/2;
+        ppd[i + 1] = random()*3/4;
         ppd[i + 2] = random()/4;
         ppd[i + 3] = 1;
 
@@ -346,6 +347,7 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform1f(velocityProgram.massLocation, this.mass);
     gl.uniform1f(velocityProgram.viscosityLocation, this.viscosity);
     gl.uniform1f(velocityProgram.searchRadiusLocation, this.searchRadius);
+    gl.uniform1f(velocityProgram.restDensityLocation, this.restDensity);
 
     // Initialize density program uniforms
     gl.uniform2f(velocityProgram.u_parResolution, s, s);

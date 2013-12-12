@@ -144,12 +144,13 @@ var enableAttributes = function(gl, program) {
 var setupControls = function(simulator) {
     var controls = new DAT.GUI({autoPlace: false});
     controls.add(simulator, 'gridSize', 100, 1000);
-    controls.add(simulator, 'viscosity', 0, 50);
+    controls.add(simulator, 'viscosity', 0, 10);
     controls.add(simulator, 'debug');
     controls.add(simulator, 'ssfr');
     controls.add(simulator, 'auto');
     controls.add(simulator, 'reset');
     controls.add(simulator, 'mass');
+    controls.add(simulator, 'restDensity', 500, 1500);
     controls.add(simulator, 'search', 1, 5);
     var customContainer = document.getElementById("my-gui-container");
     customContainer.appendChild(controls.domElement);

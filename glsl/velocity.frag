@@ -26,6 +26,7 @@ uniform float uViscosity;
 uniform vec2 uViewportSize;
 uniform float uGridSize;
 uniform float uSpaceSide;
+uniform float uRestDensity;
 
 varying float vIndex;
 vec2 textureCoord(float particleNumber) {
@@ -96,18 +97,18 @@ vec3 computeForce(float index) {
 
     float myDensity = getDensity(coord).r;
     float density = getDensity(textureCoord(index)).r;
-    float pressure = 1.0*(density - 998.23);
-    float myPressure = 1.0*(density - 998.23);
-    //pressure = (pow(density/998.23, 7.0) - 1.0);
-    //myPressure = (pow(myDensity/998.23, 7.0) - 1.0);
+    float pressure = 1.0*(density - uRestDensity);
+    float myPressure = 1.0*(density - uRestDensity);
+    //pressure = (pow(density/uRestDensity, 7.0) - 1.0);
+    //myPressure = (pow(myDensity/uRestDensity, 7.0) - 1.0);
     float c = (pressure + myPressure)/2.0;
-    vec3 force1 = c*uMass*pressureKernel(dist)/998.23;
+    vec3 force1 = c*uMass*pressureKernel(dist)/uRestDensity;
 
     if (myDensity <= 0.0) {
         return vec3(0.0);
     }
     vec3 vDiff = getVelocity(textureCoord(index)).rgb - getVelocity(coord).rgb;
-    force1 += uViscosity*vDiff*uMass*viscosityKernel(dist)/998.23;
+    force1 += uViscosity*vDiff*uMass*viscosityKernel(dist)/uRestDensity;
     return force1;
 }
 
@@ -187,8 +188,8 @@ void main(void) {
     
     if (cDist > 0.0 && length(vel) > 0.0) {
         vec3 normal = normalize(sign(contactLocal - local));
-        float rest = min(cDist/(0.005*length(vel)), 1.0);
-        vel -= (1.0 + 0.7) * dot(vel, normal) * normal;
+        float rest = min(cDist/(0.005*length(vel)), 1.2);
+        vel -= (1.0 + 0.8) * dot(vel, normal) * normal;
     }
 
     vel += 0.005*(force3);
