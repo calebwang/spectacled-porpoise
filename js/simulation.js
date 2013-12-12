@@ -6,6 +6,7 @@ var Simulation = function(gl, programs) {
     this.debug = false;
     this.auto = true;
     this.ssfr = true;
+    this.smooth = false;
     this.normal = false;
     this.particleRadius = 0.2;
 
@@ -85,6 +86,7 @@ Simulation.prototype.initShaders = function() {
     var gl = this.gl;
     var renderProgram = this.programs['render'];
     var surfaceDepthProgram = this.programs['ssfr-depth'];
+    var surfaceSmoothProgram = this.programs['ssfr-smooth'];
     var surfaceNormalProgram = this.programs['ssfr-normal'];
     var physicsProgram = this.programs['physics'];
     var velocityProgram = this.programs['velocity'];
@@ -130,13 +132,22 @@ Simulation.prototype.initShaders = function() {
     surfaceDepthProgram.particlePositionDataLocation = gl.getUniformLocation(surfaceDepthProgram, "uParticlePositionData");
     surfaceDepthProgram.surfaceDepthLocation = gl.getUniformLocation(surfaceDepthProgram, "uSurfaceDepthData");
 
+    //ssfr smooth program
+    surfaceSmoothProgram.surfaceDepthLocation = gl.getUniformLocation(surfaceSmoothProgram, "uSurfaceDepthData");
+    surfaceSmoothProgram.viewportSizeLocation = gl.getUniformLocation(surfaceSmoothProgram, "uViewportSize");
+
+    surfaceSmoothProgram.vertexCoordAttribute = gl.getAttribLocation(surfaceSmoothProgram, "aVertexCoord");
+    surfaceSmoothProgram.attributes.push(surfaceSmoothProgram.vertexCoordAttribute);
+    gl.enableVertexAttribArray(surfaceSmoothProgram.vertexCoordAttribute);
+
     //ssfr normal program
     surfaceNormalProgram.surfaceDepthLocation = gl.getUniformLocation(surfaceNormalProgram, "uSurfaceDepthData");
-    surfaceNormalProgram.vertexCoordAttribute = gl.getAttribLocation(surfaceNormalProgram, "aVertexCoord");
     surfaceNormalProgram.viewportSizeLocation = gl.getUniformLocation(surfaceNormalProgram, "uViewportSize");
+
+    surfaceNormalProgram.vertexCoordAttribute = gl.getAttribLocation(surfaceNormalProgram, "aVertexCoord");
     surfaceNormalProgram.attributes.push(surfaceNormalProgram.vertexCoordAttribute);
     gl.enableVertexAttribArray(surfaceNormalProgram.vertexCoordAttribute);
-
+    
     surfaceNormalProgram.pMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uPMatrix");
     surfaceNormalProgram.invPMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uInvPMatrix");
     surfaceNormalProgram.invMVMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uInvMVMatrix");
@@ -293,6 +304,9 @@ Simulation.prototype.initTextures = function() {
     var depthTexture = new Float32Array(gl.viewportWidth * gl.viewportHeight * 4);
     var sdt = initScreenTexture(gl, depthTexture);
     this.surfaceDepthTexture = sdt;
+    var sst = initScreenTexture(gl, null);
+    this.surfaceSmoothTexture = sst;
+
 };
 
 Simulation.prototype.initFramebuffers = function() {
@@ -324,6 +338,9 @@ Simulation.prototype.initFramebuffers = function() {
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.surfaceDepthTexture, 0);
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depth_buffer);
 
+    var ssfb = initScreenFramebuffer(gl, this.surfaceSmoothTexture);
+    this.surfaceSmoothFramebuffer = ssfb;
+
 };
 
 Simulation.prototype.initUniforms = function() {
@@ -331,6 +348,7 @@ Simulation.prototype.initUniforms = function() {
     // Set uniforms
     var renderProgram = this.renderProgram;
     var surfaceDepthProgram = this.surfaceDepthProgram;
+    var surfaceSmoothProgram = this.surfaceSmoothProgram;
     var surfaceNormalProgram = this.surfaceNormalProgram;
     var physicsProgram = this.physicsProgram;
     var velocityProgram = this.velocityProgram;
@@ -361,7 +379,11 @@ Simulation.prototype.initUniforms = function() {
     gl.uniformMatrix4fv(surfaceDepthProgram.pMatrixUniform, false, this.pMatrix);
     gl.uniformMatrix4fv(surfaceDepthProgram.mvMatrixUniform, false, this.mvMatrix);
 
-    //initialize surface normal program uniforms
+    // Initialize surface smooth program uniforms
+    gl.useProgram(surfaceSmoothProgram);
+    gl.uniform2f(surfaceSmoothProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
+
+    // Initialize surface normal program uniforms
     gl.useProgram(surfaceNormalProgram);
     gl.uniformMatrix4fv(surfaceNormalProgram.pMatrixUniform, false, this.pMatrix);
     gl.uniform2f(surfaceNormalProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
@@ -386,8 +408,6 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform1f(velocityProgram.u_diameter, this.particleDiameter);
     gl.uniform1f(velocityProgram.u_ngrid_L, this.metagridUnit);
     gl.uniform1f(velocityProgram.u_ngrid_D, this.metagridSide);
-
-
 
     // Initialize density program uniforms
     gl.useProgram(densityProgram);
@@ -592,6 +612,7 @@ Simulation.prototype.renderSurface = function() {
 
      var surfaceDepthProgram = this.surfaceDepthProgram;
      var surfaceNormalProgram = this.surfaceNormalProgram;
+     var surfaceSmoothProgram = this.surfaceSmoothProgram;
 
      gl.enable(gl.DEPTH_TEST);
      gl.depthFunc(gl.LESS);
@@ -626,14 +647,31 @@ Simulation.prototype.renderSurface = function() {
      gl.enableVertexAttribArray(surfaceDepthProgram.particleIndexAttribute);
      gl.vertexAttribPointer(surfaceDepthProgram.particleIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
-     if(this.normal) {
+     if(this.normal || this.smooth) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceDepthFramebuffer);
      } else {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
      }
      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-     gl.clear(gl.COLOR_BUFFER_BIT);
      gl.drawArrays(gl.POINTS, 0, this.numParticles);
+
+     if(this.smooth) {
+        enableAttributes(gl, surfaceSmoothProgram);
+        gl.useProgram(surfaceSmoothProgram);
+
+         // Set TEXTURE0 to surface depth texture
+         gl.uniform1i(surfaceSmoothProgram.surfaceDepthLocation, 0);
+         gl.activeTexture(gl.TEXTURE0);
+         gl.bindTexture(gl.TEXTURE_2D, this.surfaceDepthTexture);
+
+         gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
+         gl.vertexAttribPointer(surfaceSmoothProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
+
+         // render to screen
+         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+         gl.clear(gl.COLOR_BUFFER_BIT);
+         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);        
+     }
 
      // Then calculate the surface normals from depths
      if(this.normal) {
@@ -708,6 +746,7 @@ Simulation.prototype.drawScene = function() {
 Simulation.prototype.setPrograms = function() {
     this.renderProgram = this.programs['render'];
     this.surfaceDepthProgram = this.programs['ssfr-depth'];
+    this.surfaceSmoothProgram = this.programs['ssfr-smooth'];
     this.surfaceNormalProgram = this.programs['ssfr-normal'];
     this.physicsProgram = this.programs['physics'];
     this.velocityProgram = this.programs['velocity'];

@@ -193,6 +193,7 @@ var setupControls = function(simulator) {
     controls.add(simulator, 'particleRadius', 0.01, 0.5);
     controls.add(simulator, 'debug');
     controls.add(simulator, 'ssfr');
+    controls.add(simulator, 'smooth');
     controls.add(simulator, 'normal');
     controls.add(simulator, 'auto');
     controls.add(simulator, 'reset');
@@ -250,7 +251,7 @@ var setMouseHandlers = function(canvas, simulator) {
 $(document).ready(function() {
     var canvas = initCanvas();
     var gl = initGL(canvas);
-    var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'density', 'ssfr-normal'];
+    var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'density', 'ssfr-normal', 'ssfr-smooth'];
     var programs = new Programs(gl);
     programs.loadShaders(shaders, function() {
         var simulator = new Simulation(gl, programs);
