@@ -29,6 +29,9 @@ uniform float uSpaceSide;
 uniform float uRestDensity;
 
 varying float vIndex;
+
+uniform vec3 uNeighborVoxels[27];
+
 vec2 textureCoord(float particleNumber) {
     float interval = 1.0/uGridSize;
     vec2 uv;
@@ -146,35 +149,9 @@ void main(void) {
     float density = getDensity(coord).x;
 
     vec3 force3 = vec3(0.0, 0.0, 0.0);
-    force3 += computeForceContribution(vec3(0.0, 0.0, 0.0));
-    force3 += computeForceContribution(vec3(0.0, 0.0, 1.0));
-    force3 += computeForceContribution(vec3(0.0, 1.0, 0.0));
-    force3 += computeForceContribution(vec3(0.0, 1.0, 1.0));
-    force3 += computeForceContribution(vec3(0.0, -1.0, 0.0));
-    force3 += computeForceContribution(vec3(0.0, 0.0, -1.0));
-    force3 += computeForceContribution(vec3(0.0, -1.0, -1.0));
-    force3 += computeForceContribution(vec3(0.0, 1.0, -1.0));
-    force3 += computeForceContribution(vec3(0.0, -1.0, 1.0));
-
-    force3 += computeForceContribution(vec3(1.0, 0.0, 0.0));
-    force3 += computeForceContribution(vec3(1.0, 0.0, 1.0));
-    force3 += computeForceContribution(vec3(1.0, 1.0, 0.0));
-    force3 += computeForceContribution(vec3(1.0, 1.0, 1.0));
-    force3 += computeForceContribution(vec3(1.0, -1.0, 0.0));
-    force3 += computeForceContribution(vec3(1.0, 0.0, -1.0));
-    force3 += computeForceContribution(vec3(1.0, -1.0, -1.0));
-    force3 += computeForceContribution(vec3(1.0, 1.0, -1.0));
-    force3 += computeForceContribution(vec3(1.0, -1.0, 1.0));
-
-    force3 += computeForceContribution(vec3(-1.0, 0.0, 0.0));
-    force3 += computeForceContribution(vec3(-1.0, 0.0, 1.0));
-    force3 += computeForceContribution(vec3(-1.0, 1.0, 0.0));
-    force3 += computeForceContribution(vec3(-1.0, 1.0, 1.0));
-    force3 += computeForceContribution(vec3(-1.0, -1.0, 0.0));
-    force3 += computeForceContribution(vec3(-1.0, 0.0, -1.0));
-    force3 += computeForceContribution(vec3(-1.0, -1.0, -1.0));
-    force3 += computeForceContribution(vec3(-1.0, 1.0, -1.0));
-    force3 += computeForceContribution(vec3(-1.0, -1.0, 1.0));
+    for (int i = 0; i < 27; i++) {
+        force3 += computeForceContribution(uNeighborVoxels[i]);
+    }
 
     force3 = force3/density;
 
