@@ -22,8 +22,6 @@ var Simulation = function(gl, programs) {
 
     // Assuming uniform grid where there is an equal number of elements
     // In each direction
-    this.clipNear = 1.5;
-    this.clipFar = -3;
     this.particleDiameter = 1; // The diameter of a particle / side length of voxel
     this.search = 3.5;
     this.searchRadius = this.search/this.spaceSide;
@@ -49,11 +47,6 @@ var Simulation = function(gl, programs) {
     console.log(this.metagridSide);
     // Total side length of the 2D neighborhood grid
     this.neighborGridSide = this.metagridUnit * this.metagridSide;
-
-    var renderbuffer = this.neighborRenderbuffer = gl.createRenderbuffer();
-    gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL, this.neighborGridSide, this.neighborGridSide);
-    gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 
     var mvMatrix = this.mvMatrix = mat4.create();
     var pMatrix = this.pMatrix = mat4.create();
@@ -309,6 +302,12 @@ Simulation.prototype.initFramebuffers = function() {
     this.particleDensityFramebuffer = pdfb;
     var nfb = initOutputFramebuffer(gl, this.neighborGridSide, this.neighborTexture);
     this.neighborFramebuffer = nfb;
+    // Add depth buffer and stencil buffer to the neighbors framebuffer
+    gl.bindFramebuffer(gl.FRAMEBUFFER, nfb);
+    var depth_stencil_buffer = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depth_stencil_buffer);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL, this.neighborGridSide, this.neighborGridSide);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, depth_stencil_buffer);
 
     //Create frame buffers for surface rendering
     var sdfb = initScreenFramebuffer(gl, this.surfaceDepthTexture);
@@ -540,9 +539,6 @@ Simulation.prototype.updateNeighbors = function() {
 
     // We'll be doing this computation in four passes
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.neighborFramebuffer);
-    gl.bindRenderbuffer(gl.RENDERBUFFER, this.neighborRenderbuffer);
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, this.neighborRenderbuffer);
-
     gl.viewport(0, 0, s, s);
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
