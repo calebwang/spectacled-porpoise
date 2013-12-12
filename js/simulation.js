@@ -668,7 +668,11 @@ Simulation.prototype.renderSurface = function() {
          gl.vertexAttribPointer(surfaceSmoothProgram.vertexCoordAttribute, 2, gl.FLOAT, gl.FALSE, 0, 0);
 
          // render to screen
-         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+         if(this.normal) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceSmoothFramebuffer);
+         } else {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+         }
          gl.clear(gl.COLOR_BUFFER_BIT);
          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);        
      }
@@ -681,7 +685,12 @@ Simulation.prototype.renderSurface = function() {
          // Set TEXTURE0 to surface depth texture
          gl.uniform1i(surfaceNormalProgram.surfaceDepthLocation, 0);
          gl.activeTexture(gl.TEXTURE0);
-         gl.bindTexture(gl.TEXTURE_2D, this.surfaceDepthTexture);
+
+         if(this.smooth) {
+            gl.bindTexture(gl.TEXTURE_2D, this.surfaceSmoothTexture);
+         } else { 
+            gl.bindTexture(gl.TEXTURE_2D, this.surfaceDepthTexture);
+        }
         
          gl.uniformMatrix4fv(surfaceNormalProgram.pMatrixUniform, false, this.pMatrix);
          gl.uniformMatrix4fv(surfaceNormalProgram.invPMatrixUniform, false, this.invPMatrix);

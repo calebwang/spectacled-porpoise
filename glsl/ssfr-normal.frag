@@ -7,13 +7,13 @@ uniform sampler2D uSurfaceDepthData;
 uniform vec2 uViewportSize;
 
 vec3 uvToEye(vec2 uv, float depth) {
-    vec3 eye = vec4(uInvMVMatrix * uInvPMatrix * vec4(uv, 0.0, 1.0)).xyz;
+    vec3 eye = vec4(uInvPMatrix * vec4(uv, 0.0, 1.0)).xyz;
     eye.z = depth * 2.0;
     return eye;
 }
 
 vec3 getEyePos(vec2 uv) {
-    vec3 eye = vec4(uInvMVMatrix * uInvPMatrix * vec4(uv, 0.0, 1.0)).xyz;
+    vec3 eye = vec4(uInvPMatrix * vec4(uv, 0.0, 1.0)).xyz;
     float depthData = texture2D(uSurfaceDepthData, uv).z;
     eye.z = depthData * 2.0;
     return eye;
@@ -21,6 +21,12 @@ vec3 getEyePos(vec2 uv) {
 
 void main(void) {
 #line 0 10
+    //hacky lighting solution
+    vec3 lightDir1 = vec3(1.0, 1.0 , 1.0);
+    vec3 kd1 = vec3(0.0, .5, .7);
+    vec3 lightDir2 = vec3(1.0, -1.0, 1.0);
+    vec3 kd2 = vec3(0.0, 0.0, .7);
+
     vec2 tex_coord = gl_FragCoord.xy/uViewportSize;
     float depthData = texture2D(uSurfaceDepthData, tex_coord).x;
 
@@ -42,6 +48,13 @@ void main(void) {
     vec3 n = cross(ddx, ddy);
     n = normalize(n);
 
-    gl_FragColor = vec4(n, 1.0);
+
+    //hacky lighting solution
+    vec3 light1 = dot(n, lightDir1) * kd1;
+    vec3 light2 = dot(n, lightDir2) * kd2;
+    vec3 color = light1 + light2 + .01; // 2 lights + some ambient
+    gl_FragColor = vec4(color, 1.0);
+
+    //gl_FragColor = vec4(n, 1.0);
     //gl_FragColor = texture2D(uSurfaceDepthData, tex_coord);
 }
