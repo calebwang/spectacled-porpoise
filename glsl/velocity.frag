@@ -90,6 +90,9 @@ float viscosityKernel(vec3 myPos, vec3 neighbor) {
 }
 
 vec3 computeForce(float index) {
+    if (index == vIndex) {
+        return vec3(0.0);
+    }
     vec3 myPos = getPosition(vCoord).xyz;
     float myDensity = getDensity(vCoord).r;
     float myPressure = 1.0*(myDensity - uRestDensity);
