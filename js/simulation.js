@@ -70,6 +70,17 @@ var Simulation = function(gl, programs) {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.viewportQuadBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, viewportQuadVertices, gl.STATIC_DRAW);
 
+    // Create ground plane
+    var groundPlaneVertices = new Float32Array([
+        -5.0, -5.0,
+        5.0, -5.0,
+        -5.0, 5.0,
+        5.0, 5.0
+    ]);
+    this.groundPlaneBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.groundPlaneBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, groundPlaneVertices, gl.STATIC_DRAW);
+
     var nv = [];
     for (var i = -1; i <= 1; i++) {
         for (var j = -1; j <= 1; j++) {
@@ -92,6 +103,7 @@ Simulation.prototype.initShaders = function() {
     var velocityProgram = this.programs['velocity'];
     var neighborProgram = this.programs['neighbor'];
     var densityProgram = this.programs['density'];
+    var groundProgram = this.programs['ground'];
 
     // Render program
     renderProgram.particleIndexAttribute = gl.getAttribLocation(renderProgram, "aParticleIndex");
@@ -224,6 +236,14 @@ Simulation.prototype.initShaders = function() {
     neighborProgram.u_ngrid_D = gl.getUniformLocation(neighborProgram, "u_ngrid_D");
     neighborProgram.u_numParticles = gl.getUniformLocation(neighborProgram, "u_numParticles");
     neighborProgram.u_particlePositions = gl.getUniformLocation(neighborProgram, "u_particlePositions");
+
+    // Ground program
+    groundProgram.vertexCoordAttribute = gl.getAttribLocation(groundProgram, "aVertexCoord");
+    groundProgram.attributes.push(groundProgram.vertexCoordAttribute);
+    gl.enableVertexAttribArray(groundProgram.vertexCoordAttribute);
+
+    groundProgram.pMatrixUniform = gl.getUniformLocation(groundProgram, "uPMatrix");
+    groundProgram.mvMatrixUniform = gl.getUniformLocation(groundProgram, "uMVMatrix");
 };
 
 Simulation.prototype.initBuffers = function() {
@@ -343,6 +363,7 @@ Simulation.prototype.initUniforms = function() {
     var velocityProgram = this.velocityProgram;
     var densityProgram = this.densityProgram;
     var neighborProgram = this.neighborProgram;
+    var groundProgram = this.groundProgram;
     var s = this.parGridSide;
     var l = this.spaceSide;
 
@@ -421,6 +442,11 @@ Simulation.prototype.initUniforms = function() {
     gl.uniform1f(neighborProgram.u_ngrid_L, this.metagridUnit);
     gl.uniform1f(neighborProgram.u_ngrid_D, this.metagridSide);
     gl.uniform1f(neighborProgram.u_numParticles, this.numParticles);
+
+    // Initialize ground program uniforms
+    gl.useProgram(groundProgram);
+    gl.uniformMatrix4fv(groundProgram.pMatrixUniform, false, this.pMatrix);
+    gl.uniformMatrix4fv(groundProgram.mvMatrixUniform, false, this.mvMatrix);
 
 };
 
@@ -619,7 +645,7 @@ Simulation.prototype.renderSurface = function() {
      } else {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
      }
-     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+     //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
      gl.drawArrays(gl.POINTS, 0, this.numParticles);
 
      if(this.smooth) {
@@ -673,6 +699,31 @@ Simulation.prototype.renderSurface = function() {
     }
  };
 
+Simulation.prototype.drawGround = function() {
+    var gl = this.gl;
+
+    var groundProgram = this.groundProgram;
+    enableAttributes(gl, groundProgram);
+    gl.useProgram(groundProgram);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, 0.1, 1000.0);
+    mat4.identity(this.mvMatrix);
+    mat4.translate(this.mvMatrix, this.mvMatrix,[-0.5, -0.5, -3.0]);
+    mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.groundPlaneBuffer);
+    gl.enableVertexAttribArray(groundProgram.particleCoordAttribute);
+    gl.vertexAttribPointer(groundProgram.particleCoordAttribute, 2, gl.FLOAT, false, 0, 0);
+    gl.uniformMatrix4fv(groundProgram.pMatrixUniform, false, this.pMatrix);
+    gl.uniformMatrix4fv(groundProgram.mvMatrixUniform, false, this.mvMatrix);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+};
+
 Simulation.prototype.drawScene = function() {
     var gl = this.gl;
 
@@ -699,7 +750,7 @@ Simulation.prototype.drawScene = function() {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, 0.1, 1000.0);
     mat4.identity(this.mvMatrix);
@@ -728,6 +779,7 @@ Simulation.prototype.setPrograms = function() {
     this.velocityProgram = this.programs['velocity'];
     this.neighborProgram = this.programs['neighbor'];
     this.densityProgram = this.programs['density'];
+    this.groundProgram = this.programs['ground'];
 };
 
 Simulation.prototype.reset = function() {

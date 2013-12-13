@@ -251,7 +251,7 @@ var setMouseHandlers = function(canvas, simulator) {
 $(document).ready(function() {
     var canvas = initCanvas();
     var gl = initGL(canvas);
-    var shaders = ['render', 'neighbor', 'physics', 'velocity', 'ssfr-depth', 'density', 'ssfr-normal', 'ssfr-smooth'];
+    var shaders = ['render', 'neighbor', 'physics', 'velocity', 'density', 'ground', 'ssfr-depth',  'ssfr-normal', 'ssfr-smooth'];
     var programs = new Programs(gl);
     programs.loadShaders(shaders, function() {
         var simulator = new Simulation(gl, programs);
@@ -280,6 +280,7 @@ $(document).ready(function() {
             simulator.updatePositions();
             simulator.updateNeighbors();
             //simulator.drawScene();
+            simulator.drawGround();
             if(simulator.ssfr) {
                 simulator.renderSurface();
             } else {
