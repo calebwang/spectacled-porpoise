@@ -10,7 +10,6 @@ uniform float uParticleScale;
 
 uniform mat4 uPMatrix;
 varying vec3 posEye;
-varying float particleDepth;
 
 void main(void) {
 #line 0 10

@@ -15,7 +15,6 @@ uniform mat4 uPMatrix;
 
 varying float vCoord;
 varying vec3 posEye;
-varying float particleDepth;
 
 uniform vec2 u_partex_resolution;
 uniform vec2 u_space_resolution;
@@ -64,7 +63,7 @@ void main(void) {
     vec4 particle = texture2D(uParticlePositionData, uv);
 
     posEye = vec3(uMVMatrix * particle);
-    particleDepth = length(posEye);
+    float particleDepth = length(posEye);
     gl_PointSize = uParticleRadius * (uParticleScale / particleDepth);
     gl_Position = uPMatrix * uMVMatrix * particle;
 }

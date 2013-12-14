@@ -5,9 +5,10 @@ var Simulation = function(gl, programs) {
     this.gridSize = 200;
     this.debug = false;
     this.auto = true;
-    this.ssfr = true;
+    this.ssfr = false;
     this.smooth = false;
     this.normal = false;
+    this.thickness = false;
     this.particleRadius = 0.2;
 
     this.setPrograms();
@@ -88,7 +89,7 @@ Simulation.prototype.initShaders = function() {
     var surfaceDepthProgram = this.programs['ssfr-depth'];
     var surfaceSmoothProgram = this.programs['ssfr-smooth'];
     var surfaceNormalProgram = this.programs['ssfr-normal'];
-    var surfaceThicknessProckram = this.programs['ssfr-thickness'];
+    var surfaceThicknessProgram = this.programs['ssfr-thickness'];
     var physicsProgram = this.programs['physics'];
     var velocityProgram = this.programs['velocity'];
     var neighborProgram = this.programs['neighbor'];
@@ -152,6 +153,20 @@ Simulation.prototype.initShaders = function() {
     surfaceNormalProgram.pMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uPMatrix");
     surfaceNormalProgram.invPMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uInvPMatrix");
     surfaceNormalProgram.invMVMatrixUniform = gl.getUniformLocation(surfaceNormalProgram, "uInvMVMatrix");
+
+    //ssfr thickness program
+    surfaceThicknessProgram.particleIndex = gl.getAttribLocation(surfaceThicknessProgram, "aParticleIndex");
+    surfaceThicknessProgram.attributes.push(surfaceThicknessProgram.particleIndexAttribute);
+    gl.enableVertexAttribArray(surfaceThicknessProgram.particleIndexAttribute);
+
+    surfaceThicknessProgram.gridSize = gl.getUniformLocation(surfaceThicknessProgram, "uGridSize");
+    surfaceThicknessProgram.particleRadiusLocation = gl.getUniformLocation(surfaceThicknessProgram, "uParticleRadius");
+    surfaceThicknessProgram.particleScaleLocation = gl.getUniformLocation(surfaceThicknessProgram, "uParticleScale");
+
+    surfaceThicknessProgram.pMatrixUniform = gl.getUniformLocation(surfaceThicknessProgram, "uPMatrix");
+    surfaceThicknessProgram.mvMatrixUniform = gl.getUniformLocation(surfaceThicknessProgram, "uMVMatrix");
+
+    surfaceThicknessProgram.particlePositionDataLocation = gl.getUniformLocation(surfaceThicknessProgram, "uParticlePositionData");
 
     // Physics program
     physicsProgram.particlePositionDataLocation = gl.getUniformLocation(physicsProgram, "uParticlePositionData");
@@ -340,6 +355,7 @@ Simulation.prototype.initUniforms = function() {
     var surfaceDepthProgram = this.surfaceDepthProgram;
     var surfaceSmoothProgram = this.surfaceSmoothProgram;
     var surfaceNormalProgram = this.surfaceNormalProgram;
+    var surfaceThicknessProgram = this.surfaceThicknessProgram;
     var physicsProgram = this.physicsProgram;
     var velocityProgram = this.velocityProgram;
     var densityProgram = this.densityProgram;
@@ -377,6 +393,14 @@ Simulation.prototype.initUniforms = function() {
     gl.useProgram(surfaceNormalProgram);
     gl.uniformMatrix4fv(surfaceNormalProgram.pMatrixUniform, false, this.pMatrix);
     gl.uniform2f(surfaceNormalProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
+
+    // Initialize surface thickness program uniforms
+    gl.useProgram(surfaceThicknessProgram);
+    gl.uniform1f(surfaceThicknessProgram.gridSizeLocation, s);
+    gl.uniform1f(surfaceThicknessProgram.particleRadiusLocation, this.particleRadius);
+    gl.uniform1f(surfaceThicknessProgram.particleScaleLocation, this.particleScale);
+    gl.uniformMatrix4fv(surfaceThicknessProgram.pMatrixUniform, false, this.pMatrix);
+    gl.uniformMatrix4fv(surfaceThicknessProgram.mvMatrixUniform, false, this.mvMatrix);
 
     // Initialize physics program uniforms
     gl.useProgram(physicsProgram);
@@ -573,6 +597,41 @@ Simulation.prototype.updateNeighbors = function() {
     gl.disable(gl.STENCIL_TEST);
     gl.disable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
+};
+
+Simulation.prototype.renderThickness = function () {
+    var gl = this.gl;
+
+    var surfaceThicknessProgram = this.surfaceThicknessProgram;
+    enableAttributes(gl, surfaceThicknessProgram);
+    gl.useProgram(surfaceThicknessProgram);
+
+    // Set TEXTURE0 to the particle position texture
+    gl.uniform1i(surfaceThicknessProgram.particlePositionDataLocation, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    mat4.perspective(this.pMatrix, 0.78539, gl.viewportWidth / gl.viewportHeight, 0.1, 1000.0);
+    mat4.identity(this.mvMatrix);
+    mat4.translate(this.mvMatrix, this.mvMatrix,[-0.5, -0.5, -3.0]);
+    mat4.multiply(this.mvMatrix, this.mvMatrix, this.rotationMatrix);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.particleIndexBuffer);
+    gl.enableVertexAttribArray(surfaceThicknessProgram.particleIndexAttribute);
+    gl.vertexAttribPointer(surfaceThicknessProgram.particleIndexAttribute, 1, gl.FLOAT, false, 0, 0);
+    gl.uniformMatrix4fv(surfaceThicknessProgram.pMatrixUniform, false, this.pMatrix);
+    gl.uniformMatrix4fv(surfaceThicknessProgram.mvMatrixUniform, false, this.mvMatrix);
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+    gl.drawArrays(gl.POINTS, 0, this.numParticles);
+    gl.disable(gl.DEPTH_TEST);
+    gl.disable(gl.BLEND);
+
 };
 
 Simulation.prototype.renderSurface = function() {

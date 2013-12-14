@@ -195,6 +195,7 @@ var setupControls = function(simulator) {
     controls.add(simulator, 'ssfr');
     controls.add(simulator, 'smooth');
     controls.add(simulator, 'normal');
+    controls.add(simulator, 'thickness');
     controls.add(simulator, 'auto');
     controls.add(simulator, 'reset');
     controls.add(simulator, 'mass');
@@ -280,7 +281,9 @@ $(document).ready(function() {
             simulator.updatePositions();
             simulator.updateNeighbors();
             //simulator.drawScene();
-            if(simulator.ssfr) {
+            if(simulator.thickness) {
+                simulator.renderThickness();
+            } else if(simulator.ssfr) {
                 simulator.renderSurface();
             } else {
                 simulator.drawScene();
