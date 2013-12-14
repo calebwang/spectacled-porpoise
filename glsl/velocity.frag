@@ -151,7 +151,7 @@ void main(void) {
 
     vec3 center = vec3(0.5);
     vec3 local = pos - center;
-    vec3 box = vec3(0.48);
+    vec3 box = vec3(0.47);
     vec3 contactLocal = min(box, max(-box, local));
     vec3 contact = contactLocal + center;
 

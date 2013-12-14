@@ -36,7 +36,7 @@ var Simulation = function(gl, programs) {
     console.log(this.wPressureConstant);
 
     this.restDensity = 998.23;
-    this.mass = 0.05;
+    this.mass = 0.025;
 
     console.log(this.mass);
 
