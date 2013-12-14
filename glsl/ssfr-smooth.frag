@@ -13,12 +13,12 @@ void main(void) {
     float sumy = 0.0;
     float wsumy = 0.0;
     float filterRadius = 20.0;
-    float blurScale = .33;
-    float blurDepthFalloff = .33;
+    float blurScale = .1;
+    float blurDepthFalloff = 80.0;
     vec2 blurDirx = vec2(1.0/uViewportSize.x, 0.0);
     vec2 blurDiry = vec2(0.0, 1.0/uViewportSize.y);
 
-    for(float x = -20.0; x <= 20.0; x+=1.0) {
+    for(float x = -30.0; x <= 30.0; x+=1.0) {
         float sample = texture2D(uSurfaceDepthData, tex_coord + x*blurDirx).x;
         float r = x * blurScale;
         float w = exp(-r*r);
@@ -33,7 +33,7 @@ void main(void) {
         sumx =  sumx/wsumx;
     }
 
-    for(float y = -20.0; y <= 20.0; y+=1.0) {
+    for(float y = -30.0; y <= 30.0; y+=1.0) {
         float sample = texture2D(uSurfaceDepthData, tex_coord + y*blurDiry).x;
         float r = y * blurScale;
         float w = exp(-r*r);
