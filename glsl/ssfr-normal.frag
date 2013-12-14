@@ -5,6 +5,7 @@ uniform mat4 uInvPMatrix;
 uniform mat4 uInvMVMatrix;
 uniform sampler2D uSurfaceDepthData;
 uniform vec2 uViewportSize;
+uniform float uSpecularity;
 
 vec3 uvToEye(vec2 uv, float depth) {
     vec3 eye = vec4(uInvMVMatrix * uInvPMatrix * vec4(uv, 0.0, 1.0)).xyz;
@@ -24,7 +25,8 @@ void main(void) {
     //hacky lighting solution
     vec3 lightDir1 = vec3(1.0, .5 , .5);
     vec3 kd1 = vec3(0.0, .3, .5);
-    vec3 ks1 = vec3(.5, .5, .5);
+    //vec3 ks1 = vec3(.5, .5, .5);
+    vec3 ks1 = vec3(uSpecularity, uSpecularity, uSpecularity);
     vec3 lightDir2 = vec3(-1.0, -1.0, 0.0);
     vec3 kd2 = vec3(0.0, 0.3, .5);
     vec3 ks2 = vec3(.0, .0, .0);

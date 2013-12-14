@@ -3,13 +3,14 @@ var Simulation = function(gl, programs) {
     this.programs = programs;
 
     this.gridSize = 200;
+    this.specularity = 0.05;
     this.debug = false;
     this.auto = true;
-    this.ssfr = false;
-    this.smooth = false;
-    this.normal = false;
+    this.ssfr = true;
+    this.smooth = true;
+    this.normal = true;
     this.thickness = false;
-    this.particleRadius = 0.2;
+    this.particleRadius = 0.28;
 
     this.setPrograms();
 
@@ -145,6 +146,7 @@ Simulation.prototype.initShaders = function() {
     //ssfr normal program
     surfaceNormalProgram.surfaceDepthLocation = gl.getUniformLocation(surfaceNormalProgram, "uSurfaceDepthData");
     surfaceNormalProgram.viewportSizeLocation = gl.getUniformLocation(surfaceNormalProgram, "uViewportSize");
+    surfaceNormalProgram.specularityLocation = gl.getUniformLocation(surfaceNormalProgram, "uSpecularity");
 
     surfaceNormalProgram.vertexCoordAttribute = gl.getAttribLocation(surfaceNormalProgram, "aVertexCoord");
     surfaceNormalProgram.attributes.push(surfaceNormalProgram.vertexCoordAttribute);
@@ -393,6 +395,7 @@ Simulation.prototype.initUniforms = function() {
     gl.useProgram(surfaceNormalProgram);
     gl.uniformMatrix4fv(surfaceNormalProgram.pMatrixUniform, false, this.pMatrix);
     gl.uniform2f(surfaceNormalProgram.viewportSizeLocation, gl.viewportWidth, gl.viewportHeight);
+    gl.uniform1f(surfaceNormalProgram.specularityLocation, this.specularity);
 
     // Initialize surface thickness program uniforms
     gl.useProgram(surfaceThicknessProgram);

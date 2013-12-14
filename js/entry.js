@@ -191,11 +191,12 @@ var setupControls = function(simulator) {
     controls.add(simulator, 'gridSize', 100, 1000);
     controls.add(simulator, 'viscosity', 0, 50);
     controls.add(simulator, 'particleRadius', 0.01, 0.5);
+    controls.add(simulator, 'specularity', 0.0, 1.0);
     controls.add(simulator, 'debug');
     controls.add(simulator, 'ssfr');
     controls.add(simulator, 'smooth');
     controls.add(simulator, 'normal');
-    controls.add(simulator, 'thickness');
+    //controls.add(simulator, 'thickness');
     controls.add(simulator, 'auto');
     controls.add(simulator, 'reset');
     controls.add(simulator, 'mass');
@@ -280,7 +281,6 @@ $(document).ready(function() {
             simulator.updateVelocities();
             simulator.updatePositions();
             simulator.updateNeighbors();
-            //simulator.drawScene();
             if(simulator.thickness) {
                 simulator.renderThickness();
             } else if(simulator.ssfr) {
