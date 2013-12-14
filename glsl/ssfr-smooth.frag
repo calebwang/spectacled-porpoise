@@ -13,8 +13,8 @@ void main(void) {
     float sumy = 0.0;
     float wsumy = 0.0;
     float filterRadius = 20.0;
-    float blurScale = .5;
-    float blurDepthFalloff = .5;
+    float blurScale = .33;
+    float blurDepthFalloff = .33;
     vec2 blurDirx = vec2(1.0/uViewportSize.x, 0.0);
     vec2 blurDiry = vec2(0.0, 1.0/uViewportSize.y);
 
