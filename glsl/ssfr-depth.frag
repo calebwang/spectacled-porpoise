@@ -23,15 +23,6 @@ void main(void) {
     if (mag > 1.0) discard;
     norm.z = sqrt(1.0 - mag);
 
-   /* float normDepth = gl_FragCoord.z;
-    float normMag = (norm.z*uParticleRadius)/uParticleScale + normDepth;
-
-    //gl_FragColor = vec4(norm, 1.0); 
-    //gl_FragColor = vec4(norm.z, norm.z, norm.z, 1.0);
-    //gl_FragColor = vec4(normMag, normMag, normMag, 1.0);
-    float diffuse = dot(norm, lightDir);
-    gl_FragColor = vec4(diffuse*kd.r, diffuse*kd.g, diffuse*kd.b, 1.0);*/
-
     vec4 spherePosEye = vec4(posEye + (norm * uParticleRadius) / uParticleScale, 1.0);
     vec4 clipSpacePos = uPMatrix  * spherePosEye;
 
