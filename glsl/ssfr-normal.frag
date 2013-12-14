@@ -22,11 +22,11 @@ vec3 getEyePos(vec2 uv) {
 void main(void) {
 #line 0 10
     //hacky lighting solution
-    vec3 lightDir1 = vec3(1.0, -1.0 , 1.0);
+    vec3 lightDir1 = vec3(1.0, .5 , .5);
     vec3 kd1 = vec3(0.0, .3, .5);
     vec3 ks1 = vec3(.5, .5, .5);
     vec3 lightDir2 = vec3(-1.0, -1.0, 0.0);
-    vec3 kd2 = vec3(.3, 0.0, .5);
+    vec3 kd2 = vec3(0.0, 0.3, .5);
     vec3 ks2 = vec3(.0, .0, .0);
 
     vec2 tex_coord = gl_FragCoord.xy/uViewportSize;
