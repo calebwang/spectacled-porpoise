@@ -199,12 +199,49 @@ var setupControls = function(simulator) {
     //controls.add(simulator, 'thickness');
     controls.add(simulator, 'auto');
     controls.add(simulator, 'reset');
-    controls.add(simulator, 'mass');
+    controls.add(simulator, 'mass', 0.01, 0.1);
     controls.add(simulator, 'restDensity', 200, 5000);
-    controls.add(simulator, 'search', 0, 5);
+    controls.add(simulator, 'search', 0, 0.1);
     var customContainer = document.getElementById("my-gui-container");
     customContainer.appendChild(controls.domElement);
 };
+
+var setupStats = function(simulator) {
+
+    simulator.stats = stats = new Stats();
+    stats.setMode(0);
+    document.body.appendChild(stats.domElement);
+
+    var canvas = document.createElement( 'canvas' );
+    canvas.width = 100;
+    canvas.height = 100;
+    document.body.appendChild( canvas );
+
+    var context = canvas.getContext( '2d' );
+    context.fillStyle = 'rgba(127,0,255,0.05)';
+    setInterval( function () {
+
+        var time = Date.now() * 0.001;
+
+        context.clearRect( 0, 0, 512, 512 );
+
+        stats.begin();
+
+        for ( var i = 0; i < 2000; i ++ ) {
+
+            var x = Math.cos( time + i * 0.01 ) * 196 + 256;
+            var y = Math.sin( time + i * 0.01234 ) * 196 + 256;
+
+            context.beginPath();
+            context.arc( x, y, 10, 0, Math.PI * 2, true );
+            context.fill();
+
+        }
+
+        stats.end();
+
+    }, 1000 / 60 );
+}
 
 var degToRad = function(angle) {
     return angle * Math.PI/180;
@@ -265,6 +302,7 @@ $(document).ready(function() {
         simulator.initUniforms();
 
         setupControls(simulator);
+//      setupStats(simulator);
         setMouseHandlers(canvas, simulator);
 
         render = function() {
@@ -280,7 +318,6 @@ $(document).ready(function() {
             simulator.updateDensities();
             simulator.updateVelocities();
             simulator.updatePositions();
-            simulator.updateNeighbors();
             if(simulator.thickness) {
                 simulator.renderThickness();
             } else if(simulator.ssfr) {
