@@ -18,6 +18,6 @@ vec3 getVelocity(vec2 texCoord) {
 void main(void) {
     vec3 pos = getPosition(vCoord);
     vec3 vel = getVelocity(vCoord);
-    vec3 newPos = pos + vel / 120.0;
+    vec3 newPos = clamp(pos + vel / 120.0, 0.0, 1.0);
     gl_FragColor = vec4(newPos, 1.0);
 }
