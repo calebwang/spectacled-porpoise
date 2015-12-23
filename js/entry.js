@@ -6,9 +6,6 @@ var initCanvas = function() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     document.body.appendChild(canvas);
-    // canvas.onmousedown = handleMouseDown;
-    // document.onmouseup = handleMouseUp;
-    // document.onmousemove = handleMouseMove;
     return canvas;
 };
 
@@ -201,7 +198,6 @@ var setupControls = function(simulator) {
     controls.add(simulator, 'reset');
     controls.add(simulator, 'mass', 0.01, 0.1);
     controls.add(simulator, 'restDensity', 200, 5000);
-    controls.add(simulator, 'search', 0, 0.1);
     var customContainer = document.getElementById("my-gui-container");
     customContainer.appendChild(controls.domElement);
 };
@@ -241,7 +237,7 @@ var setupStats = function(simulator) {
         stats.end();
 
     }, 1000 / 60 );
-}
+};
 
 var degToRad = function(angle) {
     return angle * Math.PI/180;

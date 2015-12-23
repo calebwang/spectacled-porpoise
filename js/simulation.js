@@ -298,21 +298,21 @@ Simulation.prototype.initParticles = function() {
 
 Simulation.prototype.initTextures = function() {
     var gl = this.gl;
-    var ppt = initTexture(gl, this.parGridSide, this.particlePositionData);
-    this.particlePositionTexture = ppt;
-    var pvt = initTexture(gl, this.parGridSide, this.particleVelocityData);
-    this.particleVelocityTexture = pvt;
-    var dt = initTexture(gl, this.parGridSide, this.particleDensityData);
-    this.particleDensityTexture = dt;
-    var nt = initTexture(gl, this.neighborGridSide, null);
-    this.neighborTexture = nt;
+
+    this.particlePositionTexture = initTexture(gl, this.parGridSide, this.particlePositionData);
+    this.particlePositionTexture2 = initTexture(gl, this.parGridSide, this.particlePositionData);
+
+    this.particleVelocityTexture = initTexture(gl, this.parGridSide, this.particleVelocityData);
+    this.particleVelocityTexture2 = initTexture(gl, this.parGridSide, this.particleVelocityData);
+
+    this.particleDensityTexture = initTexture(gl, this.parGridSide, this.particleDensityData);
+
+    this.neighborTexture = initTexture(gl, this.neighborGridSide, null);
 
    //initialize Surface rendering textures
     var depthTexture = new Float32Array(gl.viewportWidth * gl.viewportHeight * 4);
-    var sdt = initScreenTexture(gl, depthTexture);
-    this.surfaceDepthTexture = sdt;
-    var sst = initScreenTexture(gl, null);
-    this.surfaceSmoothTexture = sst;
+    this.surfaceDepthTexture = initScreenTexture(gl, depthTexture);
+    this.surfaceSmoothTexture = initScreenTexture(gl, null);
 
 };
 
@@ -469,6 +469,11 @@ Simulation.prototype.updateVelocities = function() {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.particleVelocityTexture);
 
+    // Set TEXTURE4 to the second particle velocity texture
+    gl.uniform1i(velocityProgram.particleVelocityDataLocation, 1);
+    gl.activeTexture(gl.TEXTURE4);
+    gl.bindTexture(gl.TEXTURE_2D, this.particleVelocityTexture2);
+
     gl.uniform1i(velocityProgram.particleDensityDataLocation, 2);
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, this.particleDensityTexture);
@@ -484,7 +489,11 @@ Simulation.prototype.updateVelocities = function() {
     gl.vertexAttribPointer(velocityProgram.vertexIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particleVelocityFramebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.particleVelocityTexture2, 0);
     gl.drawArrays(gl.POINTS, 0, this.parGridSide*this.parGridSide);
+    var tmpTexture = this.particleVelocityTexture
+    this.particleVelocityTexture = this.particleVelocityTexture2
+    this.particleVelocityTexture2 = tmpTexture
 };
 
 Simulation.prototype.updatePositions = function() {
@@ -499,6 +508,11 @@ Simulation.prototype.updatePositions = function() {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture);
 
+    // Set TEXTURE4 to the second particle position texture
+    gl.uniform1i(physicsProgram.particlePositionDataLocation, 0);
+    gl.activeTexture(gl.TEXTURE4);
+    gl.bindTexture(gl.TEXTURE_2D, this.particlePositionTexture2);
+
     // Set TEXTURE1 to the particle velocity texture
     gl.uniform1i(physicsProgram.particleVelocityDataLocation, 1);
     gl.activeTexture(gl.TEXTURE1);
@@ -511,7 +525,11 @@ Simulation.prototype.updatePositions = function() {
     gl.vertexAttribPointer(physicsProgram.vertexIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.particlePositionFramebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.particlePositionTexture2, 0);
     gl.drawArrays(gl.POINTS, 0, this.parGridSide*this.parGridSide);
+    var tmpTexture = this.particlePositionTexture
+    this.particlePositionTexture = this.particlePositionTexture2
+    this.particlePositionTexture2 = tmpTexture
 };
 
 Simulation.prototype.updateDensities = function() {
